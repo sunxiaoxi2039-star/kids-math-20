@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>人类进化时间轴</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #0d1117 0%, #1a1a2e 40%, #16213e 100%);
+      color: #e0e0e0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 60px 20px 40px;
+      position: relative;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(100,180,255,.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    header h1 {
+      font-size: clamp(2rem, 5vw, 3.6rem);
+      font-weight: 800;
+      background: linear-gradient(90deg, #64b4ff, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: .04em;
+    }
+    header p {
+      margin-top: 14px;
+      font-size: 1.05rem;
+      color: #94a3b8;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+    }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      padding: 0 20px 40px;
+    }
+    .filter-btn {
+      padding: 8px 20px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.05);
+      color: #cbd5e1;
+      cursor: pointer;
+      font-size: .88rem;
+      letter-spacing: .03em;
+      transition: all .25s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: rgba(100,180,255,.2);
+      border-color: #64b4ff;
+      color: #fff;
+    }
+
+    /* ── Timeline container ── */
+    .timeline {
+      position: relative;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+    /* Central vertical line */
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom,
+        transparent,
+        #64b4ff 5%,
+        #a78bfa 50%,
+        #f472b6 95%,
+        transparent);
+      transform: translateX(-50%);
+    }
+
+    /* ── Each event card ── */
+    .event {
+      display: flex;
+      justify-content: flex-end;
+      padding-right: calc(50% + 40px);
+      margin-bottom: 50px;
+      position: relative;
+      opacity: 0;
+      transform: translateX(-40px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .event.right {
+      justify-content: flex-start;
+      padding-right: 0;
+      padding-left: calc(50% + 40px);
+      transform: translateX(40px);
+    }
+    .event.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .event.hidden-filter {
+      display: none;
+    }
+
+    /* Dot on the axis */
+    .event::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 24px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2.5px solid var(--dot-color, #64b4ff);
+      background: #0d1117;
+      transform: translateX(-50%);
+      box-shadow: 0 0 10px var(--dot-color, #64b4ff);
+      z-index: 2;
+    }
+
+    /* Connector line from card to dot */
+    .event-card::before {
+      content: '';
+      position: absolute;
+      top: 30px;
+      right: -40px;
+      width: 40px;
+      height: 2px;
+      background: var(--dot-color, #64b4ff);
+      opacity: .5;
+    }
+    .event.right .event-card::before {
+      right: auto;
+      left: -40px;
+    }
+
+    .event-card {
+      position: relative;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 22px 24px;
+      max-width: 400px;
+      width: 100%;
+      backdrop-filter: blur(10px);
+      transition: transform .25s, box-shadow .25s;
+      cursor: default;
+    }
+    .event-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 0 1px var(--dot-color, #64b4ff);
+    }
+
+    .event-era {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--dot-color, #64b4ff);
+      margin-bottom: 6px;
+    }
+    .event-time {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #f8fafc;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+    .event-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 10px;
+    }
+    .event-desc {
+      font-size: .88rem;
+      color: #94a3b8;
+      line-height: 1.7;
+    }
+    .event-icon {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    /* ── Section labels ── */
+    .section-label {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
+    }
+    .section-label span {
+      display: inline-block;
+      padding: 6px 24px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      font-size: .85rem;
+      letter-spacing: .12em;
+      color: #cbd5e1;
+      text-transform: uppercase;
+    }
+
+    /* ── Homo sapiens highlight section ── */
+    .sapiens-section {
+      max-width: 1000px;
+      margin: 60px auto 0;
+      padding: 0 20px 80px;
+    }
+    .sapiens-section h2 {
+      text-align: center;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 800;
+      background: linear-gradient(90deg, #f472b6, #fb923c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+    .sapiens-section > p {
+      text-align: center;
+      color: #64748b;
+      font-size: .9rem;
+      margin-bottom: 40px;
+    }
+
+    /* Horizontal scroll strip for Sapiens stages */
+    .sapiens-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+    }
+    .sapiens-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 20px 18px;
+      transition: transform .25s, box-shadow .25s;
+    }
+    .sapiens-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px rgba(244,114,182,.15);
+      border-color: rgba(244,114,182,.3);
+    }
+    .sapiens-card .s-time {
+      font-size: .78rem;
+      color: #f472b6;
+      font-weight: 700;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+    }
+    .sapiens-card .s-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+    .sapiens-card .s-icon {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .sapiens-card .s-desc {
+      font-size: .82rem;
+      color: #94a3b8;
+      line-height: 1.65;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: #334155;
+      font-size: .8rem;
+      border-top: 1px solid rgba(255,255,255,.05);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      .timeline::before { left: 20px; }
+      .event, .event.right {
+        padding-left: 60px;
+        padding-right: 0;
+        justify-content: flex-start;
+        transform: translateX(-20px);
+      }
+      .event::after { left: 20px; }
+      .event-card::before, .event.right .event-card::before {
+        left: -40px;
+        right: auto;
+        width: 40px;
+      }
+      .event-card { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>人类进化时间轴</h1>
+  <p>从最早的灵长类祖先到智人文明，跨越数百万年的生命演化旅程</p>
+</header>
+
+<!-- Filter -->
+<div class="filter-bar">
+  <button class="filter-btn active" data-filter="all">全部</button>
+  <button class="filter-btn" data-filter="primate">灵长类起源</button>
+  <button class="filter-btn" data-filter="australo">南方古猿</button>
+  <button class="filter-btn" data-filter="homo">人属演化</button>
+  <button class="filter-btn" data-filter="sapiens">智人阶段</button>
+</div>
+
+<!-- Main timeline -->
+<div class="timeline" id="timeline">
+
+  <div class="section-label"><span>灵长类起源</span></div>
+
+  <!-- 1 -->
+  <div class="event" data-category="primate" style="--dot-color:#34d399">
+    <div class="event-card">
+      <span class="event-icon">🌿</span>
+      <div class="event-era">灵长类起源</div>
+      <div class="event-time">6500 万年前</div>
+      <div class="event-name">灵长类出现</div>
+      <div class="event-desc">恐龙灭绝后，早期灵长类动物（普尔加托里猴 Purgatorius）出现，具有灵活的手指和前向视野，为后续进化奠定基础。</div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="event right" data-category="primate" style="--dot-color:#34d399">
+    <div class="event-card">
+      <span class="event-icon">🌳</span>
+      <div class="event-era">灵长类起源</div>
+      <div class="event-time">5500 万年前</div>
+      <div class="event-name">类人猿与猴子分化</div>
+      <div class="event-desc">灵长类分化为两大支系：旧世界猴（狭鼻猴下目）与类人猿祖先，逐渐形成更复杂的社会行为。</div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="event" data-category="primate" style="--dot-color:#34d399">
+    <div class="event-card">
+      <span class="event-icon">🦍</span>
+      <div class="event-era">灵长类起源</div>
+      <div class="event-time">1800 万年前</div>
+      <div class="event-name">原康修尔猿（Proconsul）</div>
+      <div class="event-desc">非洲出现最早的类人猿之一，尾部退化，脑容量增大，是猩猩、黑猩猩与人类的共同祖先候选者。</div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="event right" data-category="primate" style="--dot-color:#34d399">
+    <div class="event-card">
+      <span class="event-icon">🧬</span>
+      <div class="event-era">灵长类起源</div>
+      <div class="event-time">700 万年前</div>
+      <div class="event-name">人猿分化（撒海尔人）</div>
+      <div class="event-desc">人类与黑猩猩的共同祖先谱系分离，乍得沙赫人（Sahelanthropus tchadensis）可能是最早的人族成员，已有直立迹象。</div>
+    </div>
+  </div>
+
+  <div class="section-label"><span>南方古猿时代</span></div>
+
+  <!-- 5 -->
+  <div class="event" data-category="australo" style="--dot-color:#fbbf24">
+    <div class="event-card">
+      <span class="event-icon">🦶</span>
+      <div class="event-era">南方古猿</div>
+      <div class="event-time">420 万年前</div>
+      <div class="event-name">南方古猿始祖种</div>
+      <div class="event-desc">Australopithecus anamensis，已能直立行走，但脑容量与黑猩猩相近（约 380 cc），生活在东非草原边缘。</div>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="event right" data-category="australo" style="--dot-color:#fbbf24">
+    <div class="event-card">
+      <span class="event-icon">👣</span>
+      <div class="event-era">南方古猿</div>
+      <div class="event-time">390 万年前</div>
+      <div class="event-name">南方古猿阿法种（露西）</div>
+      <div class="event-desc">A. afarensis，双足行走能力成熟，1974年发现的"露西"骨架（约320万年前）成为最著名化石之一。坦桑尼亚莱托利留有足迹化石。</div>
+    </div>
+  </div>
+
+  <!-- 7 -->
+  <div class="event" data-category="australo" style="--dot-color:#fbbf24">
+    <div class="event-card">
+      <span class="event-icon">🪨</span>
+      <div class="event-era">南方古猿</div>
+      <div class="event-time">260 万年前</div>
+      <div class="event-name">最早石器出现</div>
+      <div class="event-desc">奥杜威文化（Oldowan）石器诞生，可能由南方古猿或早期人属使用，标志着技术演化的起点。</div>
+    </div>
+  </div>
+
+  <div class="section-label"><span>人属演化</span></div>
+
+  <!-- 8 -->
+  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
+    <div class="event-card">
+      <span class="event-icon">🧠</span>
+      <div class="event-era">人属演化</div>
+      <div class="event-time">250 万年前</div>
+      <div class="event-name">能人（Homo habilis）</div>
+      <div class="event-desc">最早归入人属的物种，脑容量约 600 cc，能制造奥杜威石器，手部骨骼显示精细抓握能力。</div>
+    </div>
+  </div>
+
+  <!-- 9 -->
+  <div class="event" data-category="homo" style="--dot-color:#818cf8">
+    <div class="event-card">
+      <span class="event-icon">🔥</span>
+      <div class="event-era">人属演化</div>
+      <div class="event-time">190 万年前</div>
+      <div class="event-name">直立人（Homo erectus）</div>
+      <div class="event-desc">脑容量达 900–1100 cc，体型接近现代人，首次走出非洲（格鲁吉亚德马尼西遗址），掌握阿舍利手斧技术，学会控制火。</div>
+    </div>
+  </div>
+
+  <!-- 10 -->
+  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
+    <div class="event-card">
+      <span class="event-icon">🌍</span>
+      <div class="event-era">人属演化</div>
+      <div class="event-time">80 万年前</div>
+      <div class="event-name">海德堡人（Homo heidelbergensis）</div>
+      <div class="event-desc">非洲与欧洲均有分布，脑容量达 1200 cc，能协作狩猎大型动物，是尼安德特人和智人的共同祖先。</div>
+    </div>
+  </div>
+
+  <!-- 11 -->
+  <div class="event" data-category="homo" style="--dot-color:#818cf8">
+    <div class="event-card">
+      <span class="event-icon">❄️</span>
+      <div class="event-era">人属演化</div>
+      <div class="event-time">40 万年前</div>
+      <div class="event-name">尼安德特人（Homo neanderthalensis）</div>
+      <div class="event-desc">适应欧洲冰期环境，脑容量甚至略超现代人（均值约 1520 cc），有埋葬死者的行为，与智人有过基因交流，约 4 万年前灭绝。</div>
+    </div>
+  </div>
+
+  <!-- 12 -->
+  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
+    <div class="event-card">
+      <span class="event-icon">🧩</span>
+      <div class="event-era">人属演化</div>
+      <div class="event-time">30 万年前</div>
+      <div class="event-name">丹尼索瓦人（Denisovans）</div>
+      <div class="event-desc">仅凭西伯利亚洞穴指骨 DNA 确认的神秘古人类，与尼安德特人是"姐妹群"，其基因至今保留在东南亚及美拉尼西亚人群中。</div>
+    </div>
+  </div>
+
+  <div class="section-label"><span>智人崛起</span></div>
+
+  <!-- 13 -->
+  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
+    <div class="event-card">
+      <span class="event-icon">🌅</span>
+      <div class="event-era">智人崛起</div>
+      <div class="event-time">30 万年前</div>
+      <div class="event-name">智人出现（Homo sapiens）</div>
+      <div class="event-desc">摩洛哥杰贝尔依罗（Jebel Irhoud）遗址发现最早智人化石，脑容量约 1350 cc，面部特征趋近现代人，已有中期石器技术。</div>
+    </div>
+  </div>
+
+  <!-- 14 -->
+  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
+    <div class="event-card">
+      <span class="event-icon">🚶</span>
+      <div class="event-era">智人崛起</div>
+      <div class="event-time">7 万年前</div>
+      <div class="event-name">走出非洲（第二次迁徙）</div>
+      <div class="event-desc">智人沿南部海岸线向亚洲扩散，穿越阿拉伯半岛，随后进入南亚、东南亚及澳大利亚，引发与古人类的相遇与融合。</div>
+    </div>
+  </div>
+
+  <!-- 15 -->
+  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
+    <div class="event-card">
+      <span class="event-icon">🎨</span>
+      <div class="event-era">智人崛起</div>
+      <div class="event-time">4 万年前</div>
+      <div class="event-name">行为现代性爆发</div>
+      <div class="event-desc">欧洲奥瑞纳文化（Aurignacian）兴起，出现洞穴壁画（肖维岩洞）、雕像、乐器（骨笛），象征性思维全面发展，标志认知革命完成。</div>
+    </div>
+  </div>
+
+  <!-- 16 -->
+  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
+    <div class="event-card">
+      <span class="event-icon">🌏</span>
+      <div class="event-era">智人崛起</div>
+      <div class="event-time">1.5 万年前</div>
+      <div class="event-name">进入美洲</div>
+      <div class="event-desc">冰期海平面下降，智人经白令陆桥从东北亚进入北美，并迅速扩展至南美最南端，成为真正的全球物种。</div>
+    </div>
+  </div>
+
+  <!-- 17 -->
+  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
+    <div class="event-card">
+      <span class="event-icon">🌾</span>
+      <div class="event-era">智人崛起</div>
+      <div class="event-time">1.2 万年前</div>
+      <div class="event-name">农业革命</div>
+      <div class="event-desc">近东新月沃地最早驯化小麦、大麦，中国独立驯化水稻与粟，从采猎到定居农耕的转变彻底改变了人类社会结构。</div>
+    </div>
+  </div>
+
+  <!-- 18 -->
+  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
+    <div class="event-card">
+      <span class="event-icon">🏙️</span>
+      <div class="event-era">智人崛起</div>
+      <div class="event-time">5000 年前</div>
+      <div class="event-name">文明与文字诞生</div>
+      <div class="event-desc">苏美尔楔形文字（约前3200年）、埃及象形文字相继出现，城市国家、法律与宗教体系形成，人类进入历史时代。</div>
+    </div>
+  </div>
+
+</div><!-- /timeline -->
+
+<!-- ── Sapiens detailed section ── -->
+<div class="sapiens-section">
+  <h2>智人到现代人 — 全程详解</h2>
+  <p>从解剖学现代人到当今文明，跨越约 30 万年的关键节点</p>
+
+  <div class="sapiens-strip">
+
+    <div class="sapiens-card">
+      <span class="s-icon">🔬</span>
+      <div class="s-time">30 万年前</div>
+      <div class="s-title">解剖学现代人</div>
+      <div class="s-desc">骨骼特征已与今人相同：高圆脑壳、小眉弓、下巴突出。基因多样性最高的非洲人群保留了最古老的支系。</div>
+    </div>
+
+    <div class="sapiens-card">
+      <span class="s-icon">💡</span>
+      <div class="s-time">16 万年前</div>
+      <div class="s-title">赭石与贝壳装饰</div>
+      <div class="s-desc">南非布隆博斯洞穴发现赭石雕刻与穿孔贝壳，证明早期智人已有抽象思维与自我装饰意识。</div>
+    </div>
+
+    <div class="sapiens-card">
+      <span class="s-icon">🤝</span>
+      <div class="s-time">7 万年前</div>
+      <div class="s-title">与古人类融合</div>
+      <div class="s-desc">现代非非洲人基因组含约 1–4% 尼安德特人 DNA，东南亚及大洋洲人群还含约 5% 丹尼索瓦人 DNA，进化从未是单一线性。</div>
+    </div>
+
+    <div class="sapiens-card">
+      <span class="s-icon">🐻</span>
+      <div class="s-time">4 万年前</div>
+      <div class="s-title">狮人雕像</div>
+      <div class="s-desc">德国洞穴发现猛犸象牙雕刻的半人半狮像，是最早的神话/宗教艺术证据，显示抽象概念与虚构叙事能力。</div>
+    </div>
+
+    <div class="sapiens-card">
+      <span class="s-icon">🐕</span>
+      <div class="s-time">1.5 万年前</div>
+      <div class="s-title">驯化狗</div>
+      <div class="s-desc">狼被驯化为犬，是人类最早的动物伙伴，辅助狩猎与看守，是系统性动物驯化的开端。</div>
+    </div>
+
+    <div class="sapiens-card">
+      <span class="s-icon">✍️</span>
+      <div class="s-time">5200 年前</div>
+      <div class="s-title">文字发明</div>
+      <div class="s-desc">苏美尔楔形文字最初用于记账，后发展为记录神话、法律与诗歌，使知识可跨代累积，极大加速文化演化速度。</div>
+    </div>
+
+    <div class="sapiens-card">
+      <span class="s-icon">⚙️</span>
+      <div class="s-time">250 年前</div>
+      <div class="s-title">工业革命</div>
+      <div class="s-desc">蒸汽机、机械化生产将人类从体力劳动中解放，城市化、科学革命与全球化加速，人口从 10 亿增长至今日逾 80 亿。</div>
+    </div>
+
+    <div class="sapiens-card">
+      <span class="s-icon">🚀</span>
+      <div class="s-time">现代</div>
+      <div class="s-title">技术奇点前夜</div>
+      <div class="s-desc">基因编辑（CRISPR）、人工智能、太空探索……智人正以前所未有的速度重塑自身与地球，生物进化与文化进化深度交织。</div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  数据参考：史密森尼人类起源项目 · Nature / Science 相关研究 · 《人类简史》（Harari）&nbsp;|&nbsp; 制作于 2026
+</footer>
+
+<script>
+  /* ── Intersection Observer for scroll animations ── */
+  const events = document.querySelectorAll('.event');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+  events.forEach(el => observer.observe(el));
+
+  /* ── Filter buttons ── */
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      events.forEach(ev => {
+        const match = filter === 'all' || ev.dataset.category === filter;
+        ev.classList.toggle('hidden-filter', !match);
+        if (match) {
+          // Re-trigger animation
+          ev.classList.remove('visible');
+          setTimeout(() => observer.observe(ev), 10);
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>
