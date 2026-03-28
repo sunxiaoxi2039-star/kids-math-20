@@ -1,0 +1,59 @@
+# AI 资讯源配置
+# 每个源包含: name, type (rss/web), url, language, category
+
+sources:
+  # --- 英文源 ---
+  - name: "OpenAI Blog"
+    type: rss
+    url: "https://openai.com/blog/rss.xml"
+    language: en
+    category: industry
+
+  - name: "Google AI Blog"
+    type: rss
+    url: "https://blog.google/technology/ai/rss/"
+    language: en
+    category: industry
+
+  - name: "HuggingFace Blog"
+    type: rss
+    url: "https://huggingface.co/blog/feed.xml"
+    language: en
+    category: opensource
+
+  - name: "MIT Technology Review - AI"
+    type: rss
+    url: "https://www.technologyreview.com/topic/artificial-intelligence/feed"
+    language: en
+    category: research
+
+  - name: "Anthropic Research"
+    type: rss
+    url: "https://www.anthropic.com/feed.xml"
+    language: en
+    category: research
+
+  - name: "The Batch (Andrew Ng)"
+    type: rss
+    url: "https://www.deeplearning.ai/the-batch/feed/"
+    language: en
+    category: newsletter
+
+  # --- 中文源 ---
+  - name: "机器之心"
+    type: rss
+    url: "https://www.jiqizhixin.com/rss"
+    language: zh
+    category: industry
+
+  - name: "量子位"
+    type: rss
+    url: "https://www.qbitai.com/feed"
+    language: zh
+    category: industry
+
+# 输出配置
+defaults:
+  max_age_days: 3        # 只抓最近3天的
+  max_items_per_source: 5 # 每个源最多5条
+  output_format: markdown # markdown / json / html
