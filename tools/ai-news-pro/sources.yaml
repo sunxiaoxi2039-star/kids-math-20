@@ -1,0 +1,352 @@
+# AI 资讯源配置 — 六层覆盖体系
+# 每层至少8-10条，总计60+条
+
+# ═══════════════════════════════════════════════════
+# 第一层：权威媒体（硬新闻）
+# ═══════════════════════════════════════════════════
+layer_1_authority:
+  name: "权威媒体"
+  min_items: 8
+  sources:
+    # 英文
+    - name: "Reuters AI"
+      type: web_search
+      query: "artificial intelligence site:reuters.com"
+      language: en
+    - name: "Bloomberg AI"
+      type: web_search
+      query: "AI artificial intelligence site:bloomberg.com"
+      language: en
+    - name: "CNBC AI"
+      type: rss
+      url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=48727718"
+      language: en
+    - name: "Wall Street Journal Tech"
+      type: web_search
+      query: "artificial intelligence site:wsj.com"
+      language: en
+    - name: "New York Times AI"
+      type: web_search
+      query: "artificial intelligence site:nytimes.com"
+      language: en
+    - name: "Financial Times AI"
+      type: web_search
+      query: "AI artificial intelligence site:ft.com"
+      language: en
+    # 中文
+    - name: "新华社 AI"
+      type: web_search
+      query: "人工智能 AI site:xinhuanet.com"
+      language: zh
+    - name: "财新 AI"
+      type: web_search
+      query: "人工智能 大模型 site:caixin.com"
+      language: zh
+    - name: "第一财经 AI"
+      type: web_search
+      query: "人工智能 AI site:yicai.com"
+      language: zh
+    - name: "经济观察报"
+      type: web_search
+      query: "人工智能 AI site:eeo.com.cn"
+      language: zh
+
+# ═══════════════════════════════════════════════════
+# 第二层：科技垂直媒体（行业深度）
+# ═══════════════════════════════════════════════════
+layer_2_tech_media:
+  name: "科技垂直媒体"
+  min_items: 8
+  sources:
+    # 英文
+    - name: "TechCrunch AI"
+      type: rss
+      url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+      language: en
+    - name: "The Verge AI"
+      type: rss
+      url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+      language: en
+    - name: "Wired AI"
+      type: web_search
+      query: "artificial intelligence site:wired.com"
+      language: en
+    - name: "MIT Technology Review"
+      type: rss
+      url: "https://www.technologyreview.com/topic/artificial-intelligence/feed"
+      language: en
+    - name: "Ars Technica AI"
+      type: rss
+      url: "https://feeds.arstechnica.com/arstechnica/technology-lab"
+      language: en
+    # 中文
+    - name: "36氪 AI"
+      type: web_search
+      query: "AI 人工智能 大模型 site:36kr.com"
+      language: zh
+    - name: "量子位"
+      type: rss
+      url: "https://www.qbitai.com/feed"
+      language: zh
+    - name: "机器之心"
+      type: rss
+      url: "https://www.jiqizhixin.com/rss"
+      language: zh
+    - name: "极客公园"
+      type: web_search
+      query: "AI 人工智能 site:geekpark.net"
+      language: zh
+    - name: "InfoQ AI"
+      type: rss
+      url: "https://www.infoq.cn/topic/AI/feed"
+      language: zh
+
+# ═══════════════════════════════════════════════════
+# 第三层：社交媒体/KOL（前沿信号+舆论风向）至少10条
+# ═══════════════════════════════════════════════════
+layer_3_social_kol:
+  name: "社交媒体与KOL"
+  min_items: 10
+  sources:
+    # X/Twitter KOL
+    - name: "Sam Altman (@sama)"
+      type: x_search
+      query: "from:sama"
+      language: en
+      kol: true
+    - name: "Dario Amodei (@DarioAmodei)"
+      type: x_search
+      query: "from:DarioAmodei"
+      language: en
+      kol: true
+    - name: "Yann LeCun (@ylecun)"
+      type: x_search
+      query: "from:ylecun"
+      language: en
+      kol: true
+    - name: "Demis Hassabis (@demaborin)"
+      type: x_search
+      query: "from:demishassabis"
+      language: en
+      kol: true
+    - name: "宝玉 (@dotey)"
+      type: x_search
+      query: "from:dotey"
+      language: zh
+      kol: true
+    - name: "Jim Fan (@DrJimFan)"
+      type: x_search
+      query: "from:DrJimFan"
+      language: en
+      kol: true
+    - name: "Andrej Karpathy (@karpathy)"
+      type: x_search
+      query: "from:karpathy"
+      language: en
+      kol: true
+    - name: "Emad Mostaque (@EMostaque)"
+      type: x_search
+      query: "from:EMostaque"
+      language: en
+      kol: true
+    # 中文社交媒体
+    - name: "量子位 (微信/微博)"
+      type: web_search
+      query: "量子位 AI 最新"
+      language: zh
+    - name: "新智元"
+      type: web_search
+      query: "新智元 AI 最新"
+      language: zh
+    - name: "AI科技评论"
+      type: web_search
+      query: "AI科技评论 最新"
+      language: zh
+    # Reddit
+    - name: "r/artificial"
+      type: rss
+      url: "https://www.reddit.com/r/artificial/top/.rss?t=day"
+      language: en
+    - name: "r/MachineLearning"
+      type: rss
+      url: "https://www.reddit.com/r/MachineLearning/hot/.rss"
+      language: en
+    # GitHub/HuggingFace
+    - name: "GitHub Trending AI"
+      type: web_search
+      query: "github trending artificial intelligence machine learning today"
+      language: en
+    - name: "HuggingFace Trending"
+      type: web_search
+      query: "huggingface trending model new release"
+      language: en
+
+# ═══════════════════════════════════════════════════
+# 第四层：官方发布（一手信息）
+# ═══════════════════════════════════════════════════
+layer_4_official:
+  name: "官方发布"
+  min_items: 8
+  sources:
+    - name: "OpenAI Blog"
+      type: rss
+      url: "https://openai.com/blog/rss.xml"
+      language: en
+    - name: "Anthropic Blog"
+      type: rss
+      url: "https://www.anthropic.com/feed.xml"
+      language: en
+    - name: "Google DeepMind"
+      type: web_search
+      query: "site:deepmind.google announcement research"
+      language: en
+    - name: "Meta AI Blog"
+      type: web_search
+      query: "site:ai.meta.com blog"
+      language: en
+    - name: "Mistral AI"
+      type: web_search
+      query: "site:mistral.ai news announcement"
+      language: en
+    - name: "Google AI Blog"
+      type: rss
+      url: "https://blog.google/technology/ai/rss/"
+      language: en
+    - name: "Microsoft AI Blog"
+      type: web_search
+      query: "site:blogs.microsoft.com artificial intelligence AI"
+      language: en
+    - name: "NVIDIA AI"
+      type: web_search
+      query: "site:blogs.nvidia.com artificial intelligence"
+      language: en
+    - name: "Apple Machine Learning"
+      type: web_search
+      query: "site:machinelearning.apple.com"
+      language: en
+    - name: "百度AI / 文心一言"
+      type: web_search
+      query: "百度 文心一言 AI 最新发布"
+      language: zh
+    - name: "阿里通义 / 阿里云AI"
+      type: web_search
+      query: "通义千问 阿里云 AI 最新"
+      language: zh
+
+# ═══════════════════════════════════════════════════
+# 第五层：科研重大发现（一手）
+# ═══════════════════════════════════════════════════
+layer_5_research:
+  name: "科研重大发现"
+  min_items: 8
+  sources:
+    - name: "arXiv AI (cs.AI)"
+      type: rss
+      url: "https://rss.arxiv.org/rss/cs.AI"
+      language: en
+    - name: "arXiv ML (cs.LG)"
+      type: rss
+      url: "https://rss.arxiv.org/rss/cs.LG"
+      language: en
+    - name: "arXiv CL (cs.CL)"
+      type: rss
+      url: "https://rss.arxiv.org/rss/cs.CL"
+      language: en
+    - name: "Papers With Code"
+      type: web_search
+      query: "site:paperswithcode.com trending latest"
+      language: en
+    - name: "Semantic Scholar AI"
+      type: web_search
+      query: "site:semanticscholar.org artificial intelligence latest"
+      language: en
+    - name: "Nature AI"
+      type: web_search
+      query: "artificial intelligence site:nature.com"
+      language: en
+    - name: "Science AI"
+      type: web_search
+      query: "artificial intelligence machine learning site:science.org"
+      language: en
+    - name: "Google Scholar"
+      type: web_search
+      query: "artificial intelligence large language model 2026"
+      language: en
+
+# ═══════════════════════════════════════════════════
+# 第六层：欧洲及其他国家 AI KOL与大模型动态
+# ═══════════════════════════════════════════════════
+layer_6_global:
+  name: "全球AI动态"
+  min_items: 6
+  sources:
+    - name: "Mistral AI (法国)"
+      type: web_search
+      query: "Mistral AI latest news France"
+      language: en
+    - name: "Aleph Alpha (德国)"
+      type: web_search
+      query: "Aleph Alpha AI Germany latest"
+      language: en
+    - name: "DeepSeek (中国)"
+      type: web_search
+      query: "DeepSeek AI latest news"
+      language: en
+    - name: "Stability AI (英国)"
+      type: web_search
+      query: "Stability AI latest news UK"
+      language: en
+    - name: "AI Sweden / European AI"
+      type: web_search
+      query: "European AI policy regulation latest"
+      language: en
+    - name: "日本 AI 动态"
+      type: web_search
+      query: "日本 AI 人工智能 最新 Sakana Preferred Networks"
+      language: zh
+    - name: "韩国 AI 动态"
+      type: web_search
+      query: "Samsung AI Korea LLM latest"
+      language: en
+    - name: "印度 AI 动态"
+      type: web_search
+      query: "India AI startup latest news"
+      language: en
+
+# ═══════════════════════════════════════════════════
+# 搜索后端配置
+# ═══════════════════════════════════════════════════
+search_backends:
+  # 优先级从高到低，自动选择可用的后端
+  tavily:
+    env_key: "TAVILY_API_KEY"
+    max_results: 5
+    search_depth: "advanced"
+    include_answer: true
+  serpapi:
+    env_key: "SERPAPI_KEY"
+    max_results: 5
+  serper:
+    env_key: "SERPER_API_KEY"
+    max_results: 5
+
+# LLM 配置（用于分析和评论）
+llm:
+  # 按优先级排列
+  backends:
+    - name: anthropic
+      env_key: "ANTHROPIC_API_KEY"
+      model: "claude-sonnet-4-20250514"
+    - name: openai
+      env_key: "OPENAI_API_KEY"
+      model: "gpt-4o"
+    - name: xai
+      env_key: "XAI_API_KEY"
+      model: "grok-3"
+      base_url: "https://api.x.ai/v1"
+
+# 输出配置
+output:
+  min_total_items: 60
+  date_format: "YYYY-MM-DD_资讯"
+  pdf_font: "Noto Sans SC"

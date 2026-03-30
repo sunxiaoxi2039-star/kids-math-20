@@ -1,0 +1,15 @@
+click>=8.0
+feedparser>=6.0
+requests>=2.28
+python-dateutil>=2.8
+pyyaml>=6.0
+jinja2>=3.1
+# LLM backends (install the one you use)
+anthropic>=0.40.0
+openai>=1.0
+# Web search backends (install the one you use)
+tavily-python>=0.5.0
+# PDF generation
+fpdf2>=2.8.0
+# Email
+# (uses Python built-in smtplib + email)
