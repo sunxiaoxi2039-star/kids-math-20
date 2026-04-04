@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "notebooklm": {
+      "command": "/root/.local/bin/notebooklm-mcp",
+      "args": ["server"]
+    }
+  }
+}
