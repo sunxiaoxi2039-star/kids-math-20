@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hermes Agent vs OpenClaw — 深度对比</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #0d1117 0%, #1a1a2e 40%, #16213e 100%);
+      color: #e0e0e0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 60px 20px 50px;
+      position: relative;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(168,139,250,.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    header h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: .03em;
+    }
+    header .subtitle {
+      margin-top: 14px;
+      font-size: 1rem;
+      color: #94a3b8;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+    }
+    .badge-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .badge {
+      padding: 5px 16px;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      border: 1px solid;
+    }
+    .badge-purple { border-color: #a78bfa; color: #a78bfa; background: rgba(167,139,250,.1); }
+    .badge-blue   { border-color: #60a5fa; color: #60a5fa; background: rgba(96,165,250,.1); }
+    .badge-green  { border-color: #34d399; color: #34d399; background: rgba(52,211,153,.1); }
+
+    /* ── Hero comparison banner ── */
+    .hero-compare {
+      display: flex;
+      max-width: 900px;
+      margin: 0 auto 60px;
+      padding: 0 20px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .hero-card {
+      flex: 1;
+      min-width: 260px;
+      border-radius: 20px;
+      padding: 32px 28px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: .08;
+      border-radius: 20px;
+    }
+    .hero-hermes {
+      background: rgba(167,139,250,.06);
+      border: 1px solid rgba(167,139,250,.25);
+    }
+    .hero-hermes::before { background: #a78bfa; }
+    .hero-openclaw {
+      background: rgba(96,165,250,.06);
+      border: 1px solid rgba(96,165,250,.25);
+    }
+    .hero-openclaw::before { background: #60a5fa; }
+    .hero-logo {
+      font-size: 3.2rem;
+      display: block;
+      margin-bottom: 14px;
+    }
+    .hero-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .hero-hermes .hero-name { color: #a78bfa; }
+    .hero-openclaw .hero-name { color: #60a5fa; }
+    .hero-tag {
+      font-size: .82rem;
+      color: #64748b;
+      margin-bottom: 18px;
+    }
+    .hero-stat {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .hero-stat-item { text-align: center; }
+    .hero-stat-item .val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+    .hero-stat-item .lbl {
+      font-size: .72rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .vs-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 60px;
+    }
+    .vs-divider span {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.06);
+      border: 1.5px solid rgba(255,255,255,.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      font-weight: 800;
+      color: #94a3b8;
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      text-align: center;
+      margin: 0 auto 40px;
+      max-width: 900px;
+      padding: 0 20px;
+    }
+    .section-title h2 {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 800;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .section-title p {
+      color: #64748b;
+      font-size: .9rem;
+      margin-top: 8px;
+    }
+
+    /* ── Diff cards ── */
+    .diff-list {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .diff-card {
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.03);
+      backdrop-filter: blur(12px);
+      transition: box-shadow .25s;
+    }
+    .diff-card:hover {
+      box-shadow: 0 16px 50px rgba(0,0,0,.5);
+    }
+    .diff-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 22px 26px 18px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .diff-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .95rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .diff-num-1 { background: rgba(167,139,250,.2); color: #a78bfa; }
+    .diff-num-2 { background: rgba(52,211,153,.2);  color: #34d399; }
+    .diff-num-3 { background: rgba(251,191,36,.2);  color: #fbbf24; }
+    .diff-num-4 { background: rgba(248,113,113,.2); color: #f87171; }
+    .diff-num-5 { background: rgba(96,165,250,.2);  color: #60a5fa; }
+    .diff-header h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .diff-header .diff-icon {
+      margin-left: auto;
+      font-size: 1.6rem;
+      opacity: .7;
+    }
+
+    .diff-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .diff-col {
+      padding: 22px 26px;
+    }
+    .diff-col:first-child {
+      border-right: 1px solid rgba(255,255,255,.06);
+    }
+    .diff-col-label {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .label-hermes { color: #a78bfa; }
+    .label-openclaw { color: #60a5fa; }
+    .diff-col p {
+      font-size: .88rem;
+      color: #94a3b8;
+      line-height: 1.75;
+    }
+    .diff-col .highlight {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+    .hl-hermes { background: rgba(167,139,250,.12); color: #c4b5fd; border: 1px solid rgba(167,139,250,.2); }
+    .hl-openclaw { background: rgba(96,165,250,.12); color: #93c5fd; border: 1px solid rgba(96,165,250,.2); }
+
+    /* ── Security special row ── */
+    .security-note {
+      grid-column: 1 / -1;
+      padding: 16px 26px;
+      background: rgba(248,113,113,.05);
+      border-top: 1px solid rgba(248,113,113,.15);
+      font-size: .82rem;
+      color: #fca5a5;
+      line-height: 1.7;
+    }
+    .security-note strong { color: #f87171; }
+
+    /* ── Who should use section ── */
+    .pick-section {
+      max-width: 900px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+    }
+    .pick-section .section-title { margin-bottom: 28px; }
+    .pick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .pick-card {
+      border-radius: 16px;
+      padding: 26px 24px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+    .pick-card-hermes { border-color: rgba(167,139,250,.25); }
+    .pick-card-openclaw { border-color: rgba(96,165,250,.25); }
+    .pick-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pick-title-hermes { color: #a78bfa; }
+    .pick-title-openclaw { color: #60a5fa; }
+    .pick-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pick-list li {
+      font-size: .87rem;
+      color: #94a3b8;
+      line-height: 1.65;
+      padding-left: 20px;
+      position: relative;
+    }
+    .pick-list li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: #475569;
+    }
+
+    /* ── Common ground ── */
+    .common-section {
+      max-width: 900px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+    }
+    .common-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+    .common-item {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 18px 16px;
+      text-align: center;
+    }
+    .common-item .ci-icon { font-size: 1.8rem; display: block; margin-bottom: 8px; }
+    .common-item .ci-text { font-size: .82rem; color: #94a3b8; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: #334155;
+      font-size: .8rem;
+      border-top: 1px solid rgba(255,255,255,.05);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .diff-body { grid-template-columns: 1fr; }
+      .diff-col:first-child { border-right: none; border-bottom: 1px solid rgba(255,255,255,.06); }
+      .pick-grid { grid-template-columns: 1fr; }
+      .vs-divider { display: none; }
+      .hero-compare { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Hermes Agent vs OpenClaw</h1>
+  <p class="subtitle">两款开源自托管 AI 智能体框架深度对比 — 设计哲学、记忆体系、安全机制全方位解析</p>
+  <div class="badge-row">
+    <span class="badge badge-purple">MIT 协议</span>
+    <span class="badge badge-blue">自托管</span>
+    <span class="badge badge-green">多模型支持</span>
+  </div>
+</header>
+
+<!-- Hero cards -->
+<div class="hero-compare">
+  <div class="hero-card hero-hermes">
+    <span class="hero-logo">🤖</span>
+    <div class="hero-name">Hermes Agent</div>
+    <div class="hero-tag">Nous Research · 2025年2月开源</div>
+    <div class="hero-stat">
+      <div class="hero-stat-item"><div class="val">~3万</div><div class="lbl">GitHub 星标</div></div>
+      <div class="hero-stat-item"><div class="val">引擎</div><div class="lbl">核心定位</div></div>
+      <div class="hero-stat-item"><div class="val">$5/mo</div><div class="lbl">最低运行成本</div></div>
+    </div>
+  </div>
+
+  <div class="vs-divider"><span>VS</span></div>
+
+  <div class="hero-card hero-openclaw">
+    <span class="hero-logo">🦞</span>
+    <div class="hero-name">OpenClaw</div>
+    <div class="hero-tag">社区驱动 · 生态成熟</div>
+    <div class="hero-stat">
+      <div class="hero-stat-item"><div class="val">34.6万</div><div class="lbl">GitHub 星标</div></div>
+      <div class="hero-stat-item"><div class="val">网关</div><div class="lbl">核心定位</div></div>
+      <div class="hero-stat-item"><div class="val">ClawHub</div><div class="lbl">技能市场</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Common ground -->
+<div class="common-section">
+  <div class="section-title">
+    <h2>两者共同点</h2>
+    <p>相同的起点，不同的方向</p>
+  </div>
+  <div class="common-grid">
+    <div class="common-item"><span class="ci-icon">💬</span><div class="ci-text">接入 Telegram / Discord / Slack / WhatsApp</div></div>
+    <div class="common-item"><span class="ci-icon">🔄</span><div class="ci-text">支持多模型自由切换</div></div>
+    <div class="common-item"><span class="ci-icon">📜</span><div class="ci-text">MIT 开源协议</div></div>
+    <div class="common-item"><span class="ci-icon">🏠</span><div class="ci-text">完全自托管，数据不出本地</div></div>
+    <div class="common-item"><span class="ci-icon">🧠</span><div class="ci-text">跨会话长期记忆</div></div>
+    <div class="common-item"><span class="ci-icon">🛠️</span><div class="ci-text">可扩展技能/插件系统</div></div>
+  </div>
+</div>
+
+<!-- Section title for diffs -->
+<div class="section-title">
+  <h2>五大核心差异</h2>
+  <p>设计哲学、技能系统、记忆体系、安全机制逐一拆解</p>
+</div>
+
+<!-- Diff list -->
+<div class="diff-list">
+
+  <!-- 1 -->
+  <div class="diff-card">
+    <div class="diff-header">
+      <div class="diff-num diff-num-1">1</div>
+      <h3>核心定位：网关 vs 引擎</h3>
+      <span class="diff-icon">🏗️</span>
+    </div>
+    <div class="diff-body">
+      <div class="diff-col">
+        <div class="diff-col-label label-hermes">🤖 Hermes Agent</div>
+        <p>以 agent <strong>执行循环</strong>为核心，设计围绕"agent 如何变得越来越强"展开。官方称之为 <em>closed learning loop（闭环学习循环）</em>，每次任务都是一次进化机会。</p>
+        <span class="highlight hl-hermes">以 agent 自身为中心</span>
+      </div>
+      <div class="diff-col">
+        <div class="diff-col-label label-openclaw">🦞 OpenClaw</div>
+        <p>核心是 <strong>Gateway 网关守护进程</strong>，统一管理会话、路由与渠道连接——像一个调度中心，把各种聊天 App 连接到 AI agent。可以理解为"多渠道个人助理操作系统"。</p>
+        <span class="highlight hl-openclaw">以消息路由为中心</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="diff-card">
+    <div class="diff-header">
+      <div class="diff-num diff-num-2">2</div>
+      <h3>技能系统：自动生成 vs 社区贡献</h3>
+      <span class="diff-icon">⚡</span>
+    </div>
+    <div class="diff-body">
+      <div class="diff-col">
+        <div class="diff-col-label label-hermes">🤖 Hermes Agent</div>
+        <p>完成复杂任务（通常涉及 5 次以上工具调用）后，自动将过程沉淀为结构化 Markdown 技能文档。技能在使用中<strong>自我迭代</strong>——发现更优方法就自动更新。有用户反馈两小时内自动生成三份技能后，重复性任务速度提升 40%。</p>
+        <span class="highlight hl-hermes">agent 自己写技能，越用越聪明</span>
+      </div>
+      <div class="diff-col">
+        <div class="diff-col-label label-openclaw">🦞 OpenClaw</div>
+        <p>技能主要依赖<strong>人工编写</strong>和社区贡献的 <em>ClawHub 技能市场</em>，生态成熟，现成可用的技能数量远超 Hermes。但"写技能"这件事本身还是交给人来做。</p>
+        <span class="highlight hl-openclaw">社区生态丰富，拿来即用</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="diff-card">
+    <div class="diff-header">
+      <div class="diff-num diff-num-3">3</div>
+      <h3>记忆体系：搜索引擎 vs 透明文件</h3>
+      <span class="diff-icon">🧠</span>
+    </div>
+    <div class="diff-body">
+      <div class="diff-col">
+        <div class="diff-col-label label-hermes">🤖 Hermes Agent</div>
+        <p>SQLite + FTS5 全文检索存储全量历史对话，按需通过搜索 + LLM 摘要召回。分两层：<br/>
+        <strong>① MEMORY.md</strong>：关键信息常驻，每次对话注入上下文<br/>
+        <strong>② 全量检索</strong>：容量无限，像给 agent 装了搜索引擎</p>
+        <span class="highlight hl-hermes">强调历史对话召回与总结</span>
+      </div>
+      <div class="diff-col">
+        <div class="diff-col-label label-openclaw">🦞 OpenClaw</div>
+        <p>Markdown 文件存储记忆，支持 SQLite、QMD 等多种检索后端，通过 <em>memory_search</em> 工具做语义/混合检索。上下文压缩前执行静默记忆写入防止信息丢失。设计原则：<strong>无隐藏状态</strong>，用户可直接读取和编辑 agent 记忆的一切内容。</p>
+        <span class="highlight hl-openclaw">透明可编辑，用户完全掌控</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="diff-card">
+    <div class="diff-header">
+      <div class="diff-num diff-num-4">4</div>
+      <h3>安全机制：纵深防御 vs 配置审计</h3>
+      <span class="diff-icon">🔐</span>
+    </div>
+    <div class="diff-body">
+      <div class="diff-col">
+        <div class="diff-col-label label-hermes">🤖 Hermes Agent</div>
+        <p>五层纵深防御架构：<strong>用户授权 → 危险命令审批 → 容器隔离 → 凭据过滤 → 上下文注入扫描</strong>。高风险操作（执行终端命令、写文件等）默认需要人工审批，超时未批准自动拒绝。</p>
+        <span class="highlight hl-hermes">主动防御，默认严格</span>
+      </div>
+      <div class="diff-col">
+        <div class="diff-col-label label-openclaw">🦞 OpenClaw</div>
+        <p>强调<strong>信任模型与配置审计</strong>，提供 <code>openclaw security audit</code> 命令一键扫描网关配置隐患。但安全历史记录欠佳：2025 年 2 月曝出多个高危漏洞，约 13.5 万实例暴露公网，ClawHub 中发现超过 300 个恶意技能。</p>
+        <span class="highlight hl-openclaw">工具完善，历史有前车之鉴</span>
+      </div>
+    </div>
+    <div class="security-note">
+      <strong>⚠ 安全提示：</strong>OpenClaw 的规模优势带来更大的攻击面，使用前建议执行安全审计并避免将实例直接暴露在公网。Hermes 的默认严格策略对新用户更友好。
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="diff-card">
+    <div class="diff-header">
+      <div class="diff-num diff-num-5">5</div>
+      <h3>部署与生态：轻量新锐 vs 成熟全面</h3>
+      <span class="diff-icon">🚀</span>
+    </div>
+    <div class="diff-body">
+      <div class="diff-col">
+        <div class="diff-col-label label-hermes">🤖 Hermes Agent</div>
+        <p>$5/月 VPS 即可运行，支持 Docker、SSH 远程、Modal 等 serverless 方案，一行 <code>curl</code> 命令完成安装。内建兼容 OpenAI API 的服务端，可直接接入 Open WebUI 等第三方界面。上线不到两个月，势头迅猛。</p>
+        <span class="highlight hl-hermes">轻量易部署，API 兼容性强</span>
+      </div>
+      <div class="diff-col">
+        <div class="diff-col-label label-openclaw">🦞 OpenClaw</div>
+        <p>34.6 万星标背后是成熟的社区生态——丰富的文档、大量现成技能、活跃的开发者社区。多渠道接入配置最完善，是目前自托管 AI agent 领域事实上的"标准答案"。</p>
+        <span class="highlight hl-openclaw">生态最成熟，社区最活跃</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Who should pick which -->
+<div class="pick-section">
+  <div class="section-title">
+    <h2>如何选择？</h2>
+    <p>根据你的实际需求做决定</p>
+  </div>
+  <div class="pick-grid">
+    <div class="pick-card pick-card-hermes">
+      <div class="pick-title pick-title-hermes">🤖 选 Hermes Agent，如果你……</div>
+      <ul class="pick-list">
+        <li>更关心 agent 长期进化能力，想让它用得越久越聪明</li>
+        <li>是 AI 研究者，需要生成训练轨迹或跑强化学习实验</li>
+        <li>之前的 OpenClaw 因授权问题无法继续使用，想换一个备选</li>
+        <li>想要开箱即用的安全默认配置，不想手动调安全策略</li>
+        <li>预算有限（$5/月 VPS 足够），或想接入 Open WebUI 等界面</li>
+      </ul>
+    </div>
+    <div class="pick-card pick-card-openclaw">
+      <div class="pick-title pick-title-openclaw">🦞 选 OpenClaw，如果你……</div>
+      <ul class="pick-list">
+        <li>需要一个"多渠道助理平台"，同时接入多种聊天工具</li>
+        <li>想用社区现成技能市场（ClawHub），不想从头配置</li>
+        <li>看重生态成熟度和社区支持，遇到问题能快速找到答案</li>
+        <li>已有 OpenClaw 部署经验，迁移成本太高</li>
+        <li>团队场景，需要完善的文档和可审计的配置体系</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<footer>
+  内容整理自社区讨论与官方文档 · Nous Research Hermes Agent · OpenClaw 社区 &nbsp;|&nbsp; 制作于 2026
+</footer>
+
+</body>
+</html>
