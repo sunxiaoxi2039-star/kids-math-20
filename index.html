@@ -3,644 +3,1153 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>人类进化时间轴</title>
+  <title>24小时AI更新雷达</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f6f6f2;
+      --surface: #ffffff;
+      --surface-soft: #fbfaf7;
+      --ink: #171717;
+      --ink-muted: #66645f;
+      --accent: #126a73;
+      --warm: #b55231;
+      --line: #d9d6ce;
+      --good: #1f7a4d;
+      --warn: #9a6700;
+      --bad: #b42318;
+      --radius: 8px;
+      --container: 1120px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+              'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    }
 
     body {
-      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      background: linear-gradient(135deg, #0d1117 0%, #1a1a2e 40%, #16213e 100%);
-      color: #e0e0e0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.6;
       min-height: 100vh;
-      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 0 20px;
     }
 
     /* ── Header ── */
-    header {
-      text-align: center;
-      padding: 60px 20px 40px;
-      position: relative;
-    }
-    header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, rgba(100,180,255,.15) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    header h1 {
-      font-size: clamp(2rem, 5vw, 3.6rem);
-      font-weight: 800;
-      background: linear-gradient(90deg, #64b4ff, #a78bfa, #f472b6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: .04em;
-    }
-    header p {
-      margin-top: 14px;
-      font-size: 1.05rem;
-      color: #94a3b8;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-      line-height: 1.7;
+    .site-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 28px 0 20px;
     }
 
-    /* ── Filter bar ── */
-    .filter-bar {
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logo {
+      width: 36px;
+      height: 36px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .site-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fff;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .3; }
+    }
+
+    .site-subtitle {
+      color: var(--ink-muted);
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: var(--ink-muted);
+    }
+
+    .header-meta strong { color: var(--ink); font-weight: 700; }
+    .meta-sep { color: var(--line); }
+
+    .source-pills {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      padding: 0 20px 40px;
+      gap: 6px;
+      margin-top: 14px;
     }
-    .filter-btn {
-      padding: 8px 20px;
+
+    .source-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
       border-radius: 999px;
-      border: 1.5px solid rgba(255,255,255,.15);
-      background: rgba(255,255,255,.05);
-      color: #cbd5e1;
-      cursor: pointer;
-      font-size: .88rem;
-      letter-spacing: .03em;
-      transition: all .25s;
-    }
-    .filter-btn:hover, .filter-btn.active {
-      background: rgba(100,180,255,.2);
-      border-color: #64b4ff;
-      color: #fff;
+      border: 1px solid var(--line);
+      font-size: 11px;
+      color: var(--ink-muted);
+      background: var(--surface);
     }
 
-    /* ── Timeline container ── */
-    .timeline {
-      position: relative;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 20px 80px;
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--good);
+      flex-shrink: 0;
     }
-    /* Central vertical line */
-    .timeline::before {
-      content: '';
-      position: absolute;
-      left: 50%;
+
+    .pill-dot.warn { background: var(--warn); }
+
+    /* ── Controls bar ── */
+    .controls-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 10px 0;
+      position: sticky;
       top: 0;
-      bottom: 0;
-      width: 2px;
-      background: linear-gradient(to bottom,
-        transparent,
-        #64b4ff 5%,
-        #a78bfa 50%,
-        #f472b6 95%,
-        transparent);
-      transform: translateX(-50%);
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
     }
 
-    /* ── Each event card ── */
-    .event {
+    .controls-inner {
       display: flex;
-      justify-content: flex-end;
-      padding-right: calc(50% + 40px);
-      margin-bottom: 50px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .search-wrap {
+      flex: 1;
       position: relative;
-      opacity: 0;
-      transform: translateX(-40px);
-      transition: opacity .6s ease, transform .6s ease;
     }
-    .event.right {
-      justify-content: flex-start;
-      padding-right: 0;
-      padding-left: calc(50% + 40px);
-      transform: translateX(40px);
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ink-muted);
+      pointer-events: none;
     }
-    .event.visible {
-      opacity: 1;
-      transform: translateX(0);
+
+    .search-input {
+      width: 100%;
+      padding: 8px 10px 8px 34px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 13px;
+      background: var(--surface);
+      color: var(--ink);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .event.hidden-filter {
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(18,106,115,.14);
+    }
+
+    .search-input::placeholder { color: var(--ink-muted); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--font);
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+
+    .btn:hover { background: var(--surface-soft); }
+    .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── Advanced panel ── */
+    .adv-panel {
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 0;
       display: none;
     }
 
-    /* Dot on the axis */
-    .event::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      top: 24px;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      border: 2.5px solid var(--dot-color, #64b4ff);
-      background: #0d1117;
-      transform: translateX(-50%);
-      box-shadow: 0 0 10px var(--dot-color, #64b4ff);
-      z-index: 2;
+    .adv-panel.open { display: block; }
+
+    .adv-inner {
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      align-items: flex-start;
     }
 
-    /* Connector line from card to dot */
-    .event-card::before {
-      content: '';
-      position: absolute;
-      top: 30px;
-      right: -40px;
-      width: 40px;
-      height: 2px;
-      background: var(--dot-color, #64b4ff);
-      opacity: .5;
-    }
-    .event.right .event-card::before {
-      right: auto;
-      left: -40px;
-    }
+    .adv-group { display: flex; flex-direction: column; gap: 8px; }
 
-    .event-card {
-      position: relative;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px;
-      padding: 22px 24px;
-      max-width: 400px;
-      width: 100%;
-      backdrop-filter: blur(10px);
-      transition: transform .25s, box-shadow .25s;
-      cursor: default;
-    }
-    .event-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 0 1px var(--dot-color, #64b4ff);
-    }
-
-    .event-era {
-      font-size: .72rem;
+    .adv-label {
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: .1em;
+      letter-spacing: .09em;
       text-transform: uppercase;
-      color: var(--dot-color, #64b4ff);
-      margin-bottom: 6px;
+      color: var(--ink-muted);
     }
-    .event-time {
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: #f8fafc;
-      line-height: 1.1;
+
+    .adv-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      max-width: 600px;
+    }
+
+    .chip {
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      font-size: 12px;
+      color: var(--ink-muted);
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
+    }
+
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+    .toggle-group {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .toggle-opt {
+      padding: 5px 13px;
+      font-size: 12px;
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--ink-muted);
+      border: none;
+      border-right: 1px solid var(--line);
+      font-family: var(--font);
+      transition: all .15s;
+    }
+
+    .toggle-opt:last-child { border-right: none; }
+    .toggle-opt.active { background: var(--accent); color: #fff; }
+    .toggle-opt:hover:not(.active) { background: var(--surface-soft); }
+
+    /* ── Main layout ── */
+    .main-content { padding: 24px 0 60px; }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ── Feed column ── */
+    .feed-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .feed-title {
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .sort-label {
+      font-size: 11px;
+      color: var(--ink-muted);
+    }
+
+    /* ── News item ── */
+    .news-item {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 7px;
+      transition: box-shadow .15s, border-color .15s;
+    }
+
+    .news-item:hover {
+      border-color: #c5c2ba;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    .news-meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 7px;
+      flex-wrap: wrap;
+    }
+
+    .source-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      color: var(--ink-muted);
+      white-space: nowrap;
+    }
+
+    .ai-tag {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(18,106,115,.12);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .05em;
+    }
+
+    .news-time {
+      font-size: 11px;
+      color: var(--ink-muted);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .news-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.4;
+      margin-bottom: 3px;
+    }
+
+    .news-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .news-title a:hover { color: var(--accent); }
+
+    .news-title-zh {
+      font-size: 12.5px;
+      color: var(--ink-muted);
+      line-height: 1.55;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--ink-muted);
+      display: none;
+    }
+
+    .no-results svg { margin-bottom: 10px; color: var(--line); }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky;
+      top: 58px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .sidebar-title {
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .s-toggle {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .s-btn {
+      padding: 3px 10px;
+      font-size: 11px;
+      border: none;
+      border-right: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-muted);
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all .15s;
+    }
+
+    .s-btn:last-child { border-right: none; }
+    .s-btn.active { background: var(--accent); color: #fff; }
+    .s-btn:hover:not(.active) { background: var(--surface-soft); }
+
+    /* WaytoAGI entries */
+    .wta-item {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .wta-item:last-child { border-bottom: none; }
+
+    .wta-time {
+      font-size: 10px;
+      color: var(--ink-muted);
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
       margin-bottom: 4px;
     }
-    .event-name {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #e2e8f0;
-      margin-bottom: 10px;
-    }
-    .event-desc {
-      font-size: .88rem;
-      color: #94a3b8;
-      line-height: 1.7;
-    }
-    .event-icon {
-      font-size: 2.2rem;
-      margin-bottom: 10px;
-      display: block;
+
+    .wta-text {
+      font-size: 12px;
+      color: var(--ink);
+      line-height: 1.55;
     }
 
-    /* ── Section labels ── */
-    .section-label {
-      text-align: center;
-      margin-bottom: 40px;
-      position: relative;
-      z-index: 1;
-    }
-    .section-label span {
-      display: inline-block;
-      padding: 6px 24px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-      font-size: .85rem;
-      letter-spacing: .12em;
-      color: #cbd5e1;
-      text-transform: uppercase;
+    /* Status */
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 16px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--line);
     }
 
-    /* ── Homo sapiens highlight section ── */
-    .sapiens-section {
-      max-width: 1000px;
-      margin: 60px auto 0;
-      padding: 0 20px 80px;
-    }
-    .sapiens-section h2 {
-      text-align: center;
-      font-size: clamp(1.4rem, 3vw, 2rem);
-      font-weight: 800;
-      background: linear-gradient(90deg, #f472b6, #fb923c);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 10px;
-    }
-    .sapiens-section > p {
-      text-align: center;
-      color: #64748b;
-      font-size: .9rem;
-      margin-bottom: 40px;
+    .status-row:last-child { border-bottom: none; }
+
+    .status-name { color: var(--ink-muted); }
+
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    /* Horizontal scroll strip for Sapiens stages */
-    .sapiens-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 18px;
+    .status-label {
+      font-size: 10px;
+      font-weight: 600;
     }
-    .sapiens-card {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 14px;
-      padding: 20px 18px;
-      transition: transform .25s, box-shadow .25s;
+
+    .status-label.good { color: var(--good); }
+    .status-label.warn { color: var(--warn); }
+    .status-label.bad { color: var(--bad); }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--good);
+      flex-shrink: 0;
     }
-    .sapiens-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 30px rgba(244,114,182,.15);
-      border-color: rgba(244,114,182,.3);
-    }
-    .sapiens-card .s-time {
-      font-size: .78rem;
-      color: #f472b6;
-      font-weight: 700;
-      letter-spacing: .08em;
-      margin-bottom: 6px;
-    }
-    .sapiens-card .s-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #f8fafc;
-      margin-bottom: 8px;
-    }
-    .sapiens-card .s-icon {
-      font-size: 1.8rem;
-      margin-bottom: 8px;
-      display: block;
-    }
-    .sapiens-card .s-desc {
-      font-size: .82rem;
-      color: #94a3b8;
-      line-height: 1.65;
-    }
+
+    .status-dot.warn { background: var(--warn); }
+    .status-dot.bad { background: var(--bad); }
 
     /* ── Footer ── */
     footer {
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+      padding: 20px 0;
       text-align: center;
-      padding: 30px;
-      color: #334155;
-      font-size: .8rem;
-      border-top: 1px solid rgba(255,255,255,.05);
+      font-size: 12px;
+      color: var(--ink-muted);
     }
 
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
     /* ── Responsive ── */
-    @media (max-width: 680px) {
-      .timeline::before { left: 20px; }
-      .event, .event.right {
-        padding-left: 60px;
-        padding-right: 0;
-        justify-content: flex-start;
-        transform: translateX(-20px);
-      }
-      .event::after { left: 20px; }
-      .event-card::before, .event.right .event-card::before {
-        left: -40px;
-        right: auto;
-        width: 40px;
-      }
-      .event-card { max-width: 100%; }
+    @media (max-width: 860px) {
+      .content-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+    }
+
+    @media (max-width: 540px) {
+      .site-title { font-size: 19px; }
+      .adv-inner { flex-direction: column; }
+      .header-meta { gap: 6px; }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>人类进化时间轴</h1>
-  <p>从最早的灵长类祖先到智人文明，跨越数百万年的生命演化旅程</p>
+<!-- ── Header ── -->
+<header class="site-header">
+  <div class="container">
+    <div class="header-top">
+      <svg class="logo" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="15.5" stroke="currentColor" stroke-width="1.2" opacity=".25"/>
+        <circle cx="18" cy="18" r="10" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+        <circle cx="18" cy="18" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+        <line x1="18" y1="2.5" x2="18" y2="33.5" stroke="currentColor" stroke-width=".8" opacity=".25"/>
+        <line x1="2.5" y1="18" x2="33.5" y2="18" stroke="currentColor" stroke-width=".8" opacity=".25"/>
+        <line x1="7" y1="7" x2="29" y2="29" stroke="currentColor" stroke-width=".8" opacity=".15"/>
+        <line x1="29" y1="7" x2="7" y2="29" stroke="currentColor" stroke-width=".8" opacity=".15"/>
+        <path d="M18 18 L29 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="29" cy="7" r="2.5" fill="currentColor"/>
+        <circle cx="18" cy="18" r="2" fill="currentColor"/>
+      </svg>
+      <h1 class="site-title">24小时AI更新雷达</h1>
+      <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+    </div>
+    <p class="site-subtitle">聚合 AI 公司官方博客、高信噪比 Newsletter 及社区动态 · 每30分钟自动更新 · 支持中英双语</p>
+    <div class="header-meta">
+      <span>🕒 更新于 <strong id="updateTime">—</strong></span>
+      <span class="meta-sep">·</span>
+      <span>过去24h <strong id="totalCount">—</strong> 条信号</span>
+      <span class="meta-sep">·</span>
+      <span>覆盖 <strong>26</strong> 个来源</span>
+      <span class="meta-sep">·</span>
+      <span>AI强相关 <strong id="aiCount">—</strong> 条</span>
+    </div>
+    <div class="source-pills" id="sourcePills"></div>
+  </div>
 </header>
 
-<!-- Filter -->
-<div class="filter-bar">
-  <button class="filter-btn active" data-filter="all">全部</button>
-  <button class="filter-btn" data-filter="primate">灵长类起源</button>
-  <button class="filter-btn" data-filter="australo">南方古猿</button>
-  <button class="filter-btn" data-filter="homo">人属演化</button>
-  <button class="filter-btn" data-filter="sapiens">智人阶段</button>
+<!-- ── Controls ── -->
+<div class="controls-bar">
+  <div class="container">
+    <div class="controls-inner">
+      <div class="search-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="search-input" id="searchInput" type="search"
+               placeholder="搜索信号 / 来源..." autocomplete="off" />
+      </div>
+      <button class="btn" id="advBtn" onclick="toggleAdv()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="4" y1="6" x2="20" y2="6"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+          <line x1="11" y1="18" x2="13" y2="18"/>
+        </svg>
+        高级筛选
+        <svg id="advChevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 </div>
 
-<!-- Main timeline -->
-<div class="timeline" id="timeline">
-
-  <div class="section-label"><span>灵长类起源</span></div>
-
-  <!-- 1 -->
-  <div class="event" data-category="primate" style="--dot-color:#34d399">
-    <div class="event-card">
-      <span class="event-icon">🌿</span>
-      <div class="event-era">灵长类起源</div>
-      <div class="event-time">6500 万年前</div>
-      <div class="event-name">灵长类出现</div>
-      <div class="event-desc">恐龙灭绝后，早期灵长类动物（普尔加托里猴 Purgatorius）出现，具有灵活的手指和前向视野，为后续进化奠定基础。</div>
+<!-- ── Advanced panel ── -->
+<div class="adv-panel" id="advPanel">
+  <div class="container">
+    <div class="adv-inner">
+      <div class="adv-group" style="flex:1;min-width:200px">
+        <div class="adv-label">来源筛选</div>
+        <div class="adv-chips" id="siteChips">
+          <span class="chip active" data-site="all" onclick="filterSite(this)">全部</span>
+        </div>
+      </div>
+      <div class="adv-group">
+        <div class="adv-label">显示模式</div>
+        <div class="toggle-group">
+          <button class="toggle-opt active" id="modeAI" onclick="setMode('ai')">AI 强相关</button>
+          <button class="toggle-opt" id="modeAll" onclick="setMode('all')">全部</button>
+        </div>
+      </div>
+      <div class="adv-group">
+        <div class="adv-label">去重</div>
+        <div class="toggle-group">
+          <button class="toggle-opt active" id="dedupOn" onclick="setDedup(true)">开启</button>
+          <button class="toggle-opt" id="dedupOff" onclick="setDedup(false)">关闭</button>
+        </div>
+      </div>
     </div>
-  </div>
-
-  <!-- 2 -->
-  <div class="event right" data-category="primate" style="--dot-color:#34d399">
-    <div class="event-card">
-      <span class="event-icon">🌳</span>
-      <div class="event-era">灵长类起源</div>
-      <div class="event-time">5500 万年前</div>
-      <div class="event-name">类人猿与猴子分化</div>
-      <div class="event-desc">灵长类分化为两大支系：旧世界猴（狭鼻猴下目）与类人猿祖先，逐渐形成更复杂的社会行为。</div>
-    </div>
-  </div>
-
-  <!-- 3 -->
-  <div class="event" data-category="primate" style="--dot-color:#34d399">
-    <div class="event-card">
-      <span class="event-icon">🦍</span>
-      <div class="event-era">灵长类起源</div>
-      <div class="event-time">1800 万年前</div>
-      <div class="event-name">原康修尔猿（Proconsul）</div>
-      <div class="event-desc">非洲出现最早的类人猿之一，尾部退化，脑容量增大，是猩猩、黑猩猩与人类的共同祖先候选者。</div>
-    </div>
-  </div>
-
-  <!-- 4 -->
-  <div class="event right" data-category="primate" style="--dot-color:#34d399">
-    <div class="event-card">
-      <span class="event-icon">🧬</span>
-      <div class="event-era">灵长类起源</div>
-      <div class="event-time">700 万年前</div>
-      <div class="event-name">人猿分化（撒海尔人）</div>
-      <div class="event-desc">人类与黑猩猩的共同祖先谱系分离，乍得沙赫人（Sahelanthropus tchadensis）可能是最早的人族成员，已有直立迹象。</div>
-    </div>
-  </div>
-
-  <div class="section-label"><span>南方古猿时代</span></div>
-
-  <!-- 5 -->
-  <div class="event" data-category="australo" style="--dot-color:#fbbf24">
-    <div class="event-card">
-      <span class="event-icon">🦶</span>
-      <div class="event-era">南方古猿</div>
-      <div class="event-time">420 万年前</div>
-      <div class="event-name">南方古猿始祖种</div>
-      <div class="event-desc">Australopithecus anamensis，已能直立行走，但脑容量与黑猩猩相近（约 380 cc），生活在东非草原边缘。</div>
-    </div>
-  </div>
-
-  <!-- 6 -->
-  <div class="event right" data-category="australo" style="--dot-color:#fbbf24">
-    <div class="event-card">
-      <span class="event-icon">👣</span>
-      <div class="event-era">南方古猿</div>
-      <div class="event-time">390 万年前</div>
-      <div class="event-name">南方古猿阿法种（露西）</div>
-      <div class="event-desc">A. afarensis，双足行走能力成熟，1974年发现的"露西"骨架（约320万年前）成为最著名化石之一。坦桑尼亚莱托利留有足迹化石。</div>
-    </div>
-  </div>
-
-  <!-- 7 -->
-  <div class="event" data-category="australo" style="--dot-color:#fbbf24">
-    <div class="event-card">
-      <span class="event-icon">🪨</span>
-      <div class="event-era">南方古猿</div>
-      <div class="event-time">260 万年前</div>
-      <div class="event-name">最早石器出现</div>
-      <div class="event-desc">奥杜威文化（Oldowan）石器诞生，可能由南方古猿或早期人属使用，标志着技术演化的起点。</div>
-    </div>
-  </div>
-
-  <div class="section-label"><span>人属演化</span></div>
-
-  <!-- 8 -->
-  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">🧠</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">250 万年前</div>
-      <div class="event-name">能人（Homo habilis）</div>
-      <div class="event-desc">最早归入人属的物种，脑容量约 600 cc，能制造奥杜威石器，手部骨骼显示精细抓握能力。</div>
-    </div>
-  </div>
-
-  <!-- 9 -->
-  <div class="event" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">🔥</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">190 万年前</div>
-      <div class="event-name">直立人（Homo erectus）</div>
-      <div class="event-desc">脑容量达 900–1100 cc，体型接近现代人，首次走出非洲（格鲁吉亚德马尼西遗址），掌握阿舍利手斧技术，学会控制火。</div>
-    </div>
-  </div>
-
-  <!-- 10 -->
-  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">🌍</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">80 万年前</div>
-      <div class="event-name">海德堡人（Homo heidelbergensis）</div>
-      <div class="event-desc">非洲与欧洲均有分布，脑容量达 1200 cc，能协作狩猎大型动物，是尼安德特人和智人的共同祖先。</div>
-    </div>
-  </div>
-
-  <!-- 11 -->
-  <div class="event" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">❄️</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">40 万年前</div>
-      <div class="event-name">尼安德特人（Homo neanderthalensis）</div>
-      <div class="event-desc">适应欧洲冰期环境，脑容量甚至略超现代人（均值约 1520 cc），有埋葬死者的行为，与智人有过基因交流，约 4 万年前灭绝。</div>
-    </div>
-  </div>
-
-  <!-- 12 -->
-  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">🧩</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">30 万年前</div>
-      <div class="event-name">丹尼索瓦人（Denisovans）</div>
-      <div class="event-desc">仅凭西伯利亚洞穴指骨 DNA 确认的神秘古人类，与尼安德特人是"姐妹群"，其基因至今保留在东南亚及美拉尼西亚人群中。</div>
-    </div>
-  </div>
-
-  <div class="section-label"><span>智人崛起</span></div>
-
-  <!-- 13 -->
-  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🌅</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">30 万年前</div>
-      <div class="event-name">智人出现（Homo sapiens）</div>
-      <div class="event-desc">摩洛哥杰贝尔依罗（Jebel Irhoud）遗址发现最早智人化石，脑容量约 1350 cc，面部特征趋近现代人，已有中期石器技术。</div>
-    </div>
-  </div>
-
-  <!-- 14 -->
-  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🚶</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">7 万年前</div>
-      <div class="event-name">走出非洲（第二次迁徙）</div>
-      <div class="event-desc">智人沿南部海岸线向亚洲扩散，穿越阿拉伯半岛，随后进入南亚、东南亚及澳大利亚，引发与古人类的相遇与融合。</div>
-    </div>
-  </div>
-
-  <!-- 15 -->
-  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🎨</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">4 万年前</div>
-      <div class="event-name">行为现代性爆发</div>
-      <div class="event-desc">欧洲奥瑞纳文化（Aurignacian）兴起，出现洞穴壁画（肖维岩洞）、雕像、乐器（骨笛），象征性思维全面发展，标志认知革命完成。</div>
-    </div>
-  </div>
-
-  <!-- 16 -->
-  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🌏</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">1.5 万年前</div>
-      <div class="event-name">进入美洲</div>
-      <div class="event-desc">冰期海平面下降，智人经白令陆桥从东北亚进入北美，并迅速扩展至南美最南端，成为真正的全球物种。</div>
-    </div>
-  </div>
-
-  <!-- 17 -->
-  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🌾</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">1.2 万年前</div>
-      <div class="event-name">农业革命</div>
-      <div class="event-desc">近东新月沃地最早驯化小麦、大麦，中国独立驯化水稻与粟，从采猎到定居农耕的转变彻底改变了人类社会结构。</div>
-    </div>
-  </div>
-
-  <!-- 18 -->
-  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🏙️</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">5000 年前</div>
-      <div class="event-name">文明与文字诞生</div>
-      <div class="event-desc">苏美尔楔形文字（约前3200年）、埃及象形文字相继出现，城市国家、法律与宗教体系形成，人类进入历史时代。</div>
-    </div>
-  </div>
-
-</div><!-- /timeline -->
-
-<!-- ── Sapiens detailed section ── -->
-<div class="sapiens-section">
-  <h2>智人到现代人 — 全程详解</h2>
-  <p>从解剖学现代人到当今文明，跨越约 30 万年的关键节点</p>
-
-  <div class="sapiens-strip">
-
-    <div class="sapiens-card">
-      <span class="s-icon">🔬</span>
-      <div class="s-time">30 万年前</div>
-      <div class="s-title">解剖学现代人</div>
-      <div class="s-desc">骨骼特征已与今人相同：高圆脑壳、小眉弓、下巴突出。基因多样性最高的非洲人群保留了最古老的支系。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">💡</span>
-      <div class="s-time">16 万年前</div>
-      <div class="s-title">赭石与贝壳装饰</div>
-      <div class="s-desc">南非布隆博斯洞穴发现赭石雕刻与穿孔贝壳，证明早期智人已有抽象思维与自我装饰意识。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">🤝</span>
-      <div class="s-time">7 万年前</div>
-      <div class="s-title">与古人类融合</div>
-      <div class="s-desc">现代非非洲人基因组含约 1–4% 尼安德特人 DNA，东南亚及大洋洲人群还含约 5% 丹尼索瓦人 DNA，进化从未是单一线性。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">🐻</span>
-      <div class="s-time">4 万年前</div>
-      <div class="s-title">狮人雕像</div>
-      <div class="s-desc">德国洞穴发现猛犸象牙雕刻的半人半狮像，是最早的神话/宗教艺术证据，显示抽象概念与虚构叙事能力。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">🐕</span>
-      <div class="s-time">1.5 万年前</div>
-      <div class="s-title">驯化狗</div>
-      <div class="s-desc">狼被驯化为犬，是人类最早的动物伙伴，辅助狩猎与看守，是系统性动物驯化的开端。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">✍️</span>
-      <div class="s-time">5200 年前</div>
-      <div class="s-title">文字发明</div>
-      <div class="s-desc">苏美尔楔形文字最初用于记账，后发展为记录神话、法律与诗歌，使知识可跨代累积，极大加速文化演化速度。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">⚙️</span>
-      <div class="s-time">250 年前</div>
-      <div class="s-title">工业革命</div>
-      <div class="s-desc">蒸汽机、机械化生产将人类从体力劳动中解放，城市化、科学革命与全球化加速，人口从 10 亿增长至今日逾 80 亿。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">🚀</span>
-      <div class="s-time">现代</div>
-      <div class="s-title">技术奇点前夜</div>
-      <div class="s-desc">基因编辑（CRISPR）、人工智能、太空探索……智人正以前所未有的速度重塑自身与地球，生物进化与文化进化深度交织。</div>
-    </div>
-
   </div>
 </div>
+
+<!-- ── Main ── -->
+<main class="main-content">
+  <div class="container">
+    <div class="content-grid">
+
+      <!-- Feed -->
+      <div>
+        <div class="feed-header">
+          <div class="feed-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            AI 信号流
+            <span class="count-badge" id="feedCount">0</span>
+          </div>
+          <span class="sort-label">按时间倒序</span>
+        </div>
+        <div id="newsFeed"></div>
+        <div class="no-results" id="noResults">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <div style="font-size:13px">没有找到匹配的信号</div>
+          <div style="font-size:12px;margin-top:4px">尝试调整搜索词或筛选条件</div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+
+        <!-- WaytoAGI -->
+        <div class="sidebar-card">
+          <div class="sidebar-header">
+            <div class="sidebar-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              WaytoAGI 更新日志
+            </div>
+            <div class="s-toggle">
+              <button class="s-btn active" id="wtaToday" onclick="setWTA('today')">今日</button>
+              <button class="s-btn" id="wtaWeek" onclick="setWTA('week')">近7日</button>
+            </div>
+          </div>
+          <div id="wtaList"></div>
+        </div>
+
+        <!-- Source health -->
+        <div class="sidebar-card">
+          <div class="sidebar-header">
+            <div class="sidebar-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+              来源健康状态
+            </div>
+          </div>
+          <div id="statusList"></div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+</main>
 
 <footer>
-  数据参考：史密森尼人类起源项目 · Nature / Science 相关研究 · 《人类简史》（Harari）&nbsp;|&nbsp; 制作于 2026
+  <div class="container">
+    数据来源：各 AI 公司官方博客 · Newsletter ·
+    <a href="#">WaytoAGI</a> · <a href="#">Hugging Face</a>
+    &nbsp;|&nbsp; 由 <a href="#">LearnPrompt</a> 维护 &nbsp;|&nbsp; 制作于 2026
+  </div>
 </footer>
 
 <script>
-  /* ── Intersection Observer for scroll animations ── */
-  const events = document.querySelectorAll('.event');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-      }
-    });
-  }, { threshold: 0.15 });
-  events.forEach(el => observer.observe(el));
+/* ── Data ─────────────────────────────────────────────────────────────────── */
 
-  /* ── Filter buttons ── */
-  const filterBtns = document.querySelectorAll('.filter-btn');
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const filter = btn.dataset.filter;
-      events.forEach(ev => {
-        const match = filter === 'all' || ev.dataset.category === filter;
-        ev.classList.toggle('hidden-filter', !match);
-        if (match) {
-          // Re-trigger animation
-          ev.classList.remove('visible');
-          setTimeout(() => observer.observe(ev), 10);
-        }
-      });
-    });
+const NOW = new Date('2026-05-03T14:30:00Z');
+
+function ago(mins) {
+  return new Date(NOW.getTime() - mins * 60000).toISOString();
+}
+
+const NEWS = [
+  {
+    id: 1, isAI: true,
+    title: 'GPT-5 Turbo: 2M Context Window, Faster Reasoning, and Multimodal Upgrades',
+    titleZh: 'GPT-5 Turbo 发布：200万词上下文、更快推理与多模态能力升级',
+    source: 'OpenAI Blog', sourceKey: 'openai', time: ago(45), url: '#',
+  },
+  {
+    id: 2, isAI: true,
+    title: 'Introducing Claude 4.5 Haiku: The Fastest Model in the Claude Family',
+    titleZh: 'Claude 4.5 Haiku 发布：Claude 系列目前最快的模型',
+    source: 'Anthropic', sourceKey: 'anthropic', time: ago(72), url: '#',
+  },
+  {
+    id: 3, isAI: true,
+    title: 'Gemini 2.5 Ultra Sets New SOTA on Math and Coding Benchmarks',
+    titleZh: 'Gemini 2.5 Ultra 在数学与代码基准测试中创下新 SOTA',
+    source: 'Google DeepMind', sourceKey: 'deepmind', time: ago(95), url: '#',
+  },
+  {
+    id: 4, isAI: true,
+    title: 'Llama 4 Scout & Maverick: Open-Source MoE Models with 128 Experts',
+    titleZh: 'Llama 4 Scout 与 Maverick 开源：128专家的混合专家架构模型',
+    source: 'Meta AI', sourceKey: 'meta', time: ago(130), url: '#',
+  },
+  {
+    id: 5, isAI: true,
+    title: 'Grok 3.5: Real-Time Web Search + Native Image Generation Now Live',
+    titleZh: 'Grok 3.5 上线：实时网络搜索与原生图像生成正式可用',
+    source: 'xAI', sourceKey: 'xai', time: ago(158), url: '#',
+  },
+  {
+    id: 6, isAI: true,
+    title: 'Mistral Medium 3: Enterprise Performance at a Competitive Price Point',
+    titleZh: 'Mistral Medium 3：具竞争力定价下的企业级性能',
+    source: 'Mistral AI', sourceKey: 'mistral', time: ago(190), url: '#',
+  },
+  {
+    id: 7, isAI: true,
+    title: 'SmolLM3 Released: A 3B Parameter Model That Runs on Mobile Devices',
+    titleZh: 'SmolLM3 发布：可在移动设备上运行的 30亿参数模型',
+    source: 'Hugging Face', sourceKey: 'huggingface', time: ago(215), url: '#',
+  },
+  {
+    id: 8, isAI: true,
+    title: 'AlphaFold 4 Predicts Protein–RNA Complexes with Atomic Accuracy',
+    titleZh: 'AlphaFold 4 以原子级精度预测蛋白质—RNA 复合物',
+    source: 'Google DeepMind', sourceKey: 'deepmind', time: ago(245), url: '#',
+  },
+  {
+    id: 9, isAI: true,
+    title: 'OpenAI Operator API: Give Your Agent a Browser — Now in Early Access',
+    titleZh: 'OpenAI Operator API：为智能体赋予浏览器控制能力，开放早期访问',
+    source: 'OpenAI Blog', sourceKey: 'openai', time: ago(270), url: '#',
+  },
+  {
+    id: 10, isAI: true,
+    title: 'Cohere Command R+ 2026: 100K Context with Improved RAG Pipeline',
+    titleZh: 'Cohere Command R+ 2026：10万词上下文与改进的 RAG 流水线',
+    source: 'Cohere', sourceKey: 'cohere', time: ago(305), url: '#',
+  },
+  {
+    id: 11, isAI: false,
+    title: 'NVIDIA Blackwell Ultra Announced: 3× Performance Over H100 for AI Training',
+    titleZh: '英伟达发布 Blackwell Ultra：AI 训练性能是 H100 的 3 倍',
+    source: 'NVIDIA', sourceKey: 'nvidia', time: ago(320), url: '#',
+  },
+  {
+    id: 12, isAI: true,
+    title: 'Anthropic Releases Model Specification 2.0 with Nuanced Safety Guidelines',
+    titleZh: 'Anthropic 发布模型规范 2.0，更新 Claude 安全准则细则',
+    source: 'Anthropic', sourceKey: 'anthropic', time: ago(340), url: '#',
+  },
+  {
+    id: 13, isAI: true,
+    title: 'Paper: Chain-of-Draft Prompting Cuts Token Usage 60% on Reasoning Tasks',
+    titleZh: '论文：Chain-of-Draft 提示在推理任务中减少 60% token 消耗',
+    source: 'arXiv AI', sourceKey: 'arxiv', time: ago(360), url: '#',
+  },
+  {
+    id: 14, isAI: false,
+    title: 'Microsoft Azure Expands AI Infrastructure with 50 New Global Data Centers',
+    titleZh: '微软 Azure 新增 50 个全球数据中心以支撑 AI 基础设施',
+    source: 'Microsoft AI', sourceKey: 'microsoft', time: ago(380), url: '#',
+  },
+  {
+    id: 15, isAI: true,
+    title: 'DeepSeek V4: 671B MoE Model with Breakthrough Code and Math Capabilities',
+    titleZh: 'DeepSeek V4：6710亿参数 MoE 模型，代码与数学能力大幅突破',
+    source: 'DeepSeek', sourceKey: 'deepseek', time: ago(405), url: '#',
+  },
+  {
+    id: 16, isAI: true,
+    title: 'Google Veo 3: Next-Gen Video Generation with Native Audio Synthesis',
+    titleZh: 'Google Veo 3：内置音频合成的下一代视频生成模型',
+    source: 'Google DeepMind', sourceKey: 'deepmind', time: ago(435), url: '#',
+  },
+  {
+    id: 17, isAI: true,
+    title: 'Stable Diffusion XL 3: Photorealistic 4K Image Generation Released',
+    titleZh: 'Stable Diffusion XL 3 发布：4K 分辨率照片级真实感图像生成',
+    source: 'Stability AI', sourceKey: 'stability', time: ago(450), url: '#',
+  },
+  {
+    id: 18, isAI: false,
+    title: 'EU AI Act Compliance Deadline: A Practical Guide for Enterprises',
+    titleZh: '欧盟 AI 法案合规截止日：企业实用指南',
+    source: 'AI Policy Weekly', sourceKey: 'aipolicy', time: ago(475), url: '#',
+  },
+  {
+    id: 19, isAI: true,
+    title: 'Apple Intelligence 3.0 Ships with iOS 20: On-Device 8B Parameter LLM',
+    titleZh: 'Apple Intelligence 3.0 随 iOS 20 发布：端侧 80亿参数大模型',
+    source: 'Apple', sourceKey: 'apple', time: ago(500), url: '#',
+  },
+  {
+    id: 20, isAI: true,
+    title: 'Paper: Constitutional Distillation Proposed as Scalable Successor to RLHF',
+    titleZh: '论文：Constitutional Distillation 作为 RLHF 可扩展替代方案被提出',
+    source: 'arXiv AI', sourceKey: 'arxiv', time: ago(520), url: '#',
+  },
+  {
+    id: 21, isAI: true,
+    title: 'Runway Gen-4: Cinema-Quality 4-Minute Video Generation with Sound',
+    titleZh: 'Runway Gen-4：4分钟时长、电影级画质、含音效的视频生成',
+    source: 'Runway', sourceKey: 'runway', time: ago(545), url: '#',
+  },
+  {
+    id: 22, isAI: false,
+    title: 'AWS Bedrock Agents v2 Launches with Multi-Agent Orchestration Support',
+    titleZh: 'AWS Bedrock Agents v2 发布，支持多智能体编排',
+    source: 'AWS AI', sourceKey: 'aws', time: ago(565), url: '#',
+  },
+  {
+    id: 23, isAI: true,
+    title: 'Baidu ERNIE 5.0 Surpasses GPT-5 on Chinese Language Benchmarks',
+    titleZh: '百度文心 5.0 在中文语言基准测试中超越 GPT-5',
+    source: 'Baidu AI', sourceKey: 'baidu', time: ago(580), url: '#',
+  },
+  {
+    id: 24, isAI: true,
+    title: 'OpenAI o4-mini: Low-Cost Reasoning Model Optimized for STEM',
+    titleZh: 'OpenAI o4-mini：针对 STEM 领域优化的低成本推理模型',
+    source: 'OpenAI Blog', sourceKey: 'openai', time: ago(600), url: '#',
+  },
+  {
+    id: 25, isAI: true,
+    title: 'Anthropic Research: Mechanistic Interpretability Reveals Concept Circuits in Claude',
+    titleZh: 'Anthropic 研究：机制可解释性揭示 Claude 内部的"概念回路"',
+    source: 'Anthropic', sourceKey: 'anthropic', time: ago(625), url: '#',
+  },
+  {
+    id: 26, isAI: false,
+    title: 'Perplexity AI Raises $500M Series E at $9B Valuation',
+    titleZh: 'Perplexity AI 完成 5亿美元 E 轮融资，估值达 90 亿美元',
+    source: 'TechCrunch AI', sourceKey: 'techcrunch', time: ago(650), url: '#',
+  },
+  {
+    id: 27, isAI: true,
+    title: 'Microsoft Copilot Gains AI Notebook: Long-Form Reasoning Workspace',
+    titleZh: 'Microsoft Copilot 新增 AI Notebook：长格式推理工作区',
+    source: 'Microsoft AI', sourceKey: 'microsoft', time: ago(665), url: '#',
+  },
+  {
+    id: 28, isAI: true,
+    title: 'Paper: Test-Time Compute Scaling Consistently Improves LLM Quality',
+    titleZh: '论文：测试时计算扩展持续提升大模型输出质量',
+    source: 'arXiv AI', sourceKey: 'arxiv', time: ago(685), url: '#',
+  },
+];
+
+const WAYTOAGI = {
+  today: [
+    {
+      time: '10:15',
+      text: '<strong>OpenAI GPT-5 Turbo</strong> 正式发布，200万词上下文，API 价格下降 30%，多模态能力大幅提升。',
+    },
+    {
+      time: '09:30',
+      text: '<strong>Claude 4.5 Haiku</strong> 上线，推理速度提升 3×，成本降低 50%，已向开发者开放 API。',
+    },
+    {
+      time: '08:45',
+      text: 'Google <strong>Veo 3</strong> 发布，支持带配乐的 4K 视频生成，单次最长 4 分钟，向创作者开放测试。',
+    },
+    {
+      time: '08:00',
+      text: '<strong>DeepSeek V4</strong> 技术报告发布，671B MoE 架构，HumanEval 上代码能力达 95.8%。',
+    },
+    {
+      time: '07:20',
+      text: '<strong>iOS 20 Beta</strong> 发布，Apple Intelligence 3.0 首次搭载端侧 8B 参数模型，无需联网。',
+    },
+    {
+      time: '06:50',
+      text: '<strong>AlphaFold 4</strong> 论文登上 Nature 封面，实现蛋白质–RNA 复合物原子级结构预测。',
+    },
+  ],
+  week: [
+    { time: '5月2日', text: '<strong>Mistral Medium 3</strong> 发布，多项企业级基准超越 GPT-4o，定价更具竞争力。' },
+    { time: '5月2日', text: '<strong>SmolLM3</strong> 开源，3B 参数，MIT 许可证，移动端可流畅运行。' },
+    { time: '5月1日', text: 'OpenAI <strong>Operator API</strong> 开放企业测试，AI 代理可直接控制浏览器执行复杂任务。' },
+    { time: '5月1日', text: '<strong>Runway Gen-4</strong> 商业版上线，4K 视频生成，Adobe Premiere 插件同步发布。' },
+    { time: '4月30日', text: '<strong>Chain-of-Draft</strong> 论文引发广泛讨论：推理任务减少 60% token，不影响准确率。' },
+    { time: '4月30日', text: '<strong>Perplexity AI</strong> 完成 5亿美元融资，估值 90 亿美元，宣布进军企业搜索市场。' },
+    { time: '4月29日', text: 'Anthropic 发布 <strong>Model Specification 2.0</strong>，更新 Claude 价值观框架与安全准则细则。' },
+    { time: '4月29日', text: '<strong>NVIDIA Blackwell Ultra</strong> 发布，单卡 FP8 算力达 5 PFLOPS，AI 训练集群专属优化。' },
+    { time: '4月28日', text: 'Meta <strong>Llama 4 Scout & Maverick</strong> 开源，128专家 MoE 架构，商业许可更宽松。' },
+    { time: '4月28日', text: '<strong>Grok 3.5</strong> 上线，集成实时搜索与 FLUX 图像生成，X Premium+ 用户免费使用。' },
+  ],
+};
+
+const STATUS = [
+  { name: 'OpenAI Blog',       status: 'good' },
+  { name: 'Anthropic News',    status: 'good' },
+  { name: 'Google DeepMind',   status: 'good' },
+  { name: 'Meta AI Blog',      status: 'good' },
+  { name: 'Hugging Face',      status: 'good' },
+  { name: 'arXiv cs.AI',       status: 'good' },
+  { name: 'Mistral AI',        status: 'good' },
+  { name: 'xAI Blog',          status: 'good' },
+  { name: 'DeepSeek',          status: 'warn' },
+  { name: 'Stability AI',      status: 'good' },
+  { name: 'Cohere Blog',       status: 'good' },
+  { name: 'AWS AI Blog',       status: 'good' },
+];
+
+/* ── State ─────────────────────────────────────────────────────────────────── */
+
+const state = {
+  search: '',
+  site: 'all',
+  mode: 'ai',
+  dedup: true,
+  wta: 'today',
+};
+
+/* ── Bootstrap ─────────────────────────────────────────────────────────────── */
+
+function init() {
+  document.getElementById('updateTime').textContent = fmtTime(NOW);
+  document.getElementById('totalCount').textContent = NEWS.length;
+  document.getElementById('aiCount').textContent = NEWS.filter(n => n.isAI).length;
+
+  buildSourcePills();
+  buildSiteChips();
+  buildStatusList();
+
+  document.getElementById('searchInput').addEventListener('input', e => {
+    state.search = e.target.value.toLowerCase().trim();
+    render();
   });
+
+  renderWTA();
+  render();
+}
+
+function buildSourcePills() {
+  const el = document.getElementById('sourcePills');
+  const sources = ['OpenAI Blog', 'Anthropic', 'Google DeepMind', 'Meta AI',
+                   'xAI', 'Mistral AI', 'Hugging Face', 'arXiv AI'];
+  sources.forEach(s => {
+    const p = document.createElement('span');
+    p.className = 'source-pill';
+    p.innerHTML = `<span class="pill-dot"></span>${s}`;
+    el.appendChild(p);
+  });
+  const more = document.createElement('span');
+  more.className = 'source-pill';
+  more.innerHTML = `<span class="pill-dot warn"></span>+18 更多`;
+  el.appendChild(more);
+}
+
+function buildSiteChips() {
+  const el = document.getElementById('siteChips');
+  const sources = [...new Set(NEWS.map(n => ({ label: n.source, key: n.sourceKey }))
+    .map(JSON.stringify))].map(JSON.parse)
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  sources.forEach(({ label, key }) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.dataset.site = key;
+    chip.textContent = label;
+    chip.onclick = function () { filterSite(this); };
+    el.appendChild(chip);
+  });
+}
+
+function buildStatusList() {
+  const el = document.getElementById('statusList');
+  const labels = { good: '正常', warn: '慢速', bad: '异常' };
+  STATUS.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'status-row';
+    row.innerHTML = `
+      <span class="status-name">${s.name}</span>
+      <span class="status-right">
+        <span class="status-label ${s.status}">${labels[s.status]}</span>
+        <span class="status-dot ${s.status !== 'good' ? s.status : ''}"></span>
+      </span>`;
+    el.appendChild(row);
+  });
+}
+
+/* ── Render ─────────────────────────────────────────────────────────────────── */
+
+function render() {
+  let items = [...NEWS];
+
+  if (state.mode === 'ai') items = items.filter(n => n.isAI);
+  if (state.site !== 'all') items = items.filter(n => n.sourceKey === state.site);
+
+  if (state.dedup) {
+    const seen = new Set();
+    items = items.filter(n => {
+      const key = n.sourceKey + '|' + n.title.slice(0, 32).toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  if (state.search) {
+    items = items.filter(n =>
+      n.title.toLowerCase().includes(state.search) ||
+      n.titleZh.includes(state.search) ||
+      n.source.toLowerCase().includes(state.search)
+    );
+  }
+
+  const feed = document.getElementById('newsFeed');
+  feed.innerHTML = '';
+
+  items.forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'news-item';
+    div.innerHTML = `
+      <div class="news-meta">
+        <span class="source-badge">${n.source}</span>
+        ${n.isAI ? '<span class="ai-tag">AI</span>' : ''}
+        <span class="news-time">${timeAgo(new Date(n.time))}</span>
+      </div>
+      <div class="news-title"><a href="${n.url}" target="_blank" rel="noopener">${n.title}</a></div>
+      <div class="news-title-zh">${n.titleZh}</div>`;
+    feed.appendChild(div);
+  });
+
+  document.getElementById('feedCount').textContent = items.length;
+  document.getElementById('noResults').style.display = items.length === 0 ? 'block' : 'none';
+}
+
+function renderWTA() {
+  const el = document.getElementById('wtaList');
+  el.innerHTML = '';
+  WAYTOAGI[state.wta].forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'wta-item';
+    div.innerHTML = `<div class="wta-time">${item.time}</div><div class="wta-text">${item.text}</div>`;
+    el.appendChild(div);
+  });
+}
+
+/* ── Control handlers ───────────────────────────────────────────────────────── */
+
+function toggleAdv() {
+  const panel = document.getElementById('advPanel');
+  const btn = document.getElementById('advBtn');
+  const chevron = document.getElementById('advChevron');
+  const open = panel.classList.toggle('open');
+  btn.classList.toggle('active', open);
+  chevron.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function filterSite(el) {
+  document.querySelectorAll('#siteChips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  state.site = el.dataset.site;
+  render();
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  document.getElementById('modeAI').classList.toggle('active', mode === 'ai');
+  document.getElementById('modeAll').classList.toggle('active', mode === 'all');
+  render();
+}
+
+function setDedup(on) {
+  state.dedup = on;
+  document.getElementById('dedupOn').classList.toggle('active', on);
+  document.getElementById('dedupOff').classList.toggle('active', !on);
+  render();
+}
+
+function setWTA(range) {
+  state.wta = range;
+  document.getElementById('wtaToday').classList.toggle('active', range === 'today');
+  document.getElementById('wtaWeek').classList.toggle('active', range === 'week');
+  renderWTA();
+}
+
+/* ── Helpers ─────────────────────────────────────────────────────────────────── */
+
+function fmtTime(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
+
+function timeAgo(d) {
+  const diff = Math.floor((NOW - d) / 60000);
+  if (diff < 60) return `${diff}分钟前`;
+  const h = Math.floor(diff / 60);
+  if (h < 24) return `${h}小时前`;
+  return `${Math.floor(h / 24)}天前`;
+}
+
+/* ── Boot ─────────────────────────────────────────────────────────────────── */
+init();
 </script>
 </body>
 </html>
