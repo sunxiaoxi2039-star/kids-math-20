@@ -1,729 +1,694 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>24小时AI更新雷达</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #f6f6f2;
-      --surface: #ffffff;
-      --surface-soft: #fbfaf7;
-      --ink: #171717;
-      --ink-muted: #66645f;
-      --accent: #126a73;
-      --warm: #b55231;
-      --line: #d9d6ce;
-      --good: #1f7a4d;
-      --warn: #9a6700;
-      --bad: #b42318;
-      --radius: 8px;
-      --container: 1120px;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-              'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-    }
-
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--ink);
-      font-size: 14px;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: var(--container);
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    /* ── Header ── */
-    .site-header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--line);
-      padding: 28px 0 20px;
-    }
-
-    .header-top {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-
-    .logo {
-      width: 36px;
-      height: 36px;
-      color: var(--accent);
-      flex-shrink: 0;
-    }
-
-    .site-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--ink);
-      letter-spacing: -0.02em;
-    }
-
-    .live-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 2px 9px;
-      border-radius: 999px;
-      background: var(--accent);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-    }
-
-    .live-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #fff;
-      animation: pulse 1.4s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .3; }
-    }
-
-    .site-subtitle {
-      color: var(--ink-muted);
-      font-size: 13px;
-      margin-bottom: 16px;
-      line-height: 1.5;
-    }
-
-    .header-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      font-size: 12px;
-      color: var(--ink-muted);
-    }
-
-    .header-meta strong { color: var(--ink); font-weight: 700; }
-    .meta-sep { color: var(--line); }
-
-    .source-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 14px;
-    }
-
-    .source-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 9px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      font-size: 11px;
-      color: var(--ink-muted);
-      background: var(--surface);
-    }
-
-    .pill-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--good);
-      flex-shrink: 0;
-    }
-
-    .pill-dot.warn { background: var(--warn); }
-
-    /* ── Controls bar ── */
-    .controls-bar {
-      background: var(--surface);
-      border-bottom: 1px solid var(--line);
-      padding: 10px 0;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 1px 3px rgba(0,0,0,.04);
-    }
-
-    .controls-inner {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .search-wrap {
-      flex: 1;
-      position: relative;
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--ink-muted);
-      pointer-events: none;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 8px 10px 8px 34px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      font-family: var(--font);
-      font-size: 13px;
-      background: var(--surface);
-      color: var(--ink);
-      outline: none;
-      transition: border-color .15s, box-shadow .15s;
-    }
-
-    .search-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(18,106,115,.14);
-    }
-
-    .search-input::placeholder { color: var(--ink-muted); }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      border-radius: var(--radius);
-      border: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--ink);
-      font-family: var(--font);
-      font-size: 13px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background .15s, border-color .15s, color .15s;
-    }
-
-    .btn:hover { background: var(--surface-soft); }
-    .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-    /* ── Advanced panel ── */
-    .adv-panel {
-      background: var(--surface-soft);
-      border-bottom: 1px solid var(--line);
-      padding: 14px 0;
-      display: none;
-    }
-
-    .adv-panel.open { display: block; }
-
-    .adv-inner {
-      display: flex;
-      gap: 28px;
-      flex-wrap: wrap;
-      align-items: flex-start;
-    }
-
-    .adv-group { display: flex; flex-direction: column; gap: 8px; }
-
-    .adv-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .09em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-    }
-
-    .adv-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      max-width: 600px;
-    }
-
-    .chip {
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--surface);
-      font-size: 12px;
-      color: var(--ink-muted);
-      cursor: pointer;
-      transition: all .15s;
-      user-select: none;
-    }
-
-    .chip:hover { border-color: var(--accent); color: var(--accent); }
-    .chip.active { border-color: var(--accent); background: var(--accent); color: #fff; }
-
-    .toggle-group {
-      display: inline-flex;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .toggle-opt {
-      padding: 5px 13px;
-      font-size: 12px;
-      cursor: pointer;
-      background: var(--surface);
-      color: var(--ink-muted);
-      border: none;
-      border-right: 1px solid var(--line);
-      font-family: var(--font);
-      transition: all .15s;
-    }
-
-    .toggle-opt:last-child { border-right: none; }
-    .toggle-opt.active { background: var(--accent); color: #fff; }
-    .toggle-opt:hover:not(.active) { background: var(--surface-soft); }
-
-    /* ── Main layout ── */
-    .main-content { padding: 24px 0 60px; }
-
-    .content-grid {
-      display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 24px;
-      align-items: start;
-    }
-
-    /* ── Feed column ── */
-    .feed-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-
-    .feed-title {
-      font-size: 13px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .count-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1px 7px;
-      border-radius: 999px;
-      background: var(--accent);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .sort-label {
-      font-size: 11px;
-      color: var(--ink-muted);
-    }
-
-    /* ── News item ── */
-    .news-item {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      margin-bottom: 7px;
-      transition: box-shadow .15s, border-color .15s;
-    }
-
-    .news-item:hover {
-      border-color: #c5c2ba;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
-    }
-
-    .news-meta {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-bottom: 7px;
-      flex-wrap: wrap;
-    }
-
-    .source-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-      background: var(--surface-soft);
-      border: 1px solid var(--line);
-      color: var(--ink-muted);
-      white-space: nowrap;
-    }
-
-    .ai-tag {
-      display: inline-block;
-      padding: 1px 5px;
-      border-radius: 3px;
-      background: rgba(18,106,115,.12);
-      color: var(--accent);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: .05em;
-    }
-
-    .news-time {
-      font-size: 11px;
-      color: var(--ink-muted);
-      margin-left: auto;
-      white-space: nowrap;
-    }
-
-    .news-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--ink);
-      line-height: 1.4;
-      margin-bottom: 3px;
-    }
-
-    .news-title a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .news-title a:hover { color: var(--accent); }
-
-    .news-title-zh {
-      font-size: 12.5px;
-      color: var(--ink-muted);
-      line-height: 1.55;
-    }
-
-    .no-results {
-      text-align: center;
-      padding: 48px 20px;
-      color: var(--ink-muted);
-      display: none;
-    }
-
-    .no-results svg { margin-bottom: 10px; color: var(--line); }
-
-    /* ── Sidebar ── */
-    .sidebar {
-      position: sticky;
-      top: 58px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .sidebar-card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .sidebar-header {
-      padding: 11px 16px;
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .sidebar-title {
-      font-size: 13px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .s-toggle {
-      display: inline-flex;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .s-btn {
-      padding: 3px 10px;
-      font-size: 11px;
-      border: none;
-      border-right: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--ink-muted);
-      cursor: pointer;
-      font-family: var(--font);
-      transition: all .15s;
-    }
-
-    .s-btn:last-child { border-right: none; }
-    .s-btn.active { background: var(--accent); color: #fff; }
-    .s-btn:hover:not(.active) { background: var(--surface-soft); }
-
-    /* WaytoAGI entries */
-    .wta-item {
-      padding: 11px 16px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .wta-item:last-child { border-bottom: none; }
-
-    .wta-time {
-      font-size: 10px;
-      color: var(--ink-muted);
-      font-weight: 700;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .wta-text {
-      font-size: 12px;
-      color: var(--ink);
-      line-height: 1.55;
-    }
-
-    /* Status */
-    .status-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 7px 16px;
-      font-size: 12px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .status-row:last-child { border-bottom: none; }
-
-    .status-name { color: var(--ink-muted); }
-
-    .status-right {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .status-label {
-      font-size: 10px;
-      font-weight: 600;
-    }
-
-    .status-label.good { color: var(--good); }
-    .status-label.warn { color: var(--warn); }
-    .status-label.bad { color: var(--bad); }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--good);
-      flex-shrink: 0;
-    }
-
-    .status-dot.warn { background: var(--warn); }
-    .status-dot.bad { background: var(--bad); }
-
-    /* ── Footer ── */
-    footer {
-      border-top: 1px solid var(--line);
-      background: var(--surface);
-      padding: 20px 0;
-      text-align: center;
-      font-size: 12px;
-      color: var(--ink-muted);
-    }
-
-    footer a { color: var(--accent); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-
-    /* ── Responsive ── */
-    @media (max-width: 860px) {
-      .content-grid { grid-template-columns: 1fr; }
-      .sidebar { position: static; }
-    }
-
-    @media (max-width: 540px) {
-      .site-title { font-size: 19px; }
-      .adv-inner { flex-direction: column; }
-      .header-meta { gap: 6px; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- ── Header ── -->
-<header class="site-header">
-  <div class="container">
-    <div class="header-top">
-      <svg class="logo" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="18" cy="18" r="15.5" stroke="currentColor" stroke-width="1.2" opacity=".25"/>
-        <circle cx="18" cy="18" r="10" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
-        <circle cx="18" cy="18" r="4.5" stroke="currentColor" stroke-width="1.4"/>
-        <line x1="18" y1="2.5" x2="18" y2="33.5" stroke="currentColor" stroke-width=".8" opacity=".25"/>
-        <line x1="2.5" y1="18" x2="33.5" y2="18" stroke="currentColor" stroke-width=".8" opacity=".25"/>
-        <line x1="7" y1="7" x2="29" y2="29" stroke="currentColor" stroke-width=".8" opacity=".15"/>
-        <line x1="29" y1="7" x2="7" y2="29" stroke="currentColor" stroke-width=".8" opacity=".15"/>
-        <path d="M18 18 L29 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="29" cy="7" r="2.5" fill="currentColor"/>
-        <circle cx="18" cy="18" r="2" fill="currentColor"/>
-      </svg>
-      <h1 class="site-title">24小时AI更新雷达</h1>
-      <span class="live-badge"><span class="live-dot"></span>LIVE</span>
-    </div>
-    <p class="site-subtitle">聚合 AI 公司官方博客、高信噪比 Newsletter 及社区动态 · 每30分钟自动更新 · 支持中英双语</p>
-    <div class="header-meta">
-      <span>🕒 更新于 <strong id="updateTime">—</strong></span>
-      <span class="meta-sep">·</span>
-      <span>过去24h <strong id="totalCount">—</strong> 条信号</span>
-      <span class="meta-sep">·</span>
-      <span>覆盖 <strong>26</strong> 个来源</span>
-      <span class="meta-sep">·</span>
-      <span>AI强相关 <strong id="aiCount">—</strong> 条</span>
-    </div>
-    <div class="source-pills" id="sourcePills"></div>
-  </div>
-</header>
-
-<!-- ── Controls ── -->
-<div class="controls-bar">
-  <div class="container">
-    <div class="controls-inner">
-      <div class="search-wrap">
-        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input class="search-input" id="searchInput" type="search"
-               placeholder="搜索信号 / 来源..." autocomplete="off" />
-      </div>
-      <button class="btn" id="advBtn" onclick="toggleAdv()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="4" y1="6" x2="20" y2="6"/>
-          <line x1="8" y1="12" x2="16" y2="12"/>
-          <line x1="11" y1="18" x2="13" y2="18"/>
-        </svg>
-        高级筛选
-        <svg id="advChevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s">
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Advanced panel ── -->
-<div class="adv-panel" id="advPanel">
-  <div class="container">
-    <div class="adv-inner">
-      <div class="adv-group" style="flex:1;min-width:200px">
-        <div class="adv-label">来源筛选</div>
-        <div class="adv-chips" id="siteChips">
-          <span class="chip active" data-site="all" onclick="filterSite(this)">全部</span>
-        </div>
-      </div>
-      <div class="adv-group">
-        <div class="adv-label">显示模式</div>
-        <div class="toggle-group">
-          <button class="toggle-opt active" id="modeAI" onclick="setMode('ai')">AI 强相关</button>
-          <button class="toggle-opt" id="modeAll" onclick="setMode('all')">全部</button>
-        </div>
-      </div>
-      <div class="adv-group">
-        <div class="adv-label">去重</div>
-        <div class="toggle-group">
-          <button class="toggle-opt active" id="dedupOn" onclick="setDedup(true)">开启</button>
-          <button class="toggle-opt" id="dedupOff" onclick="setDedup(false)">关闭</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── Main ── -->
-<main class="main-content">
-  <div class="container">
-    <div class="content-grid">
-
-      <!-- Feed -->
-      <div>
-        <div class="feed-header">
-          <div class="feed-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Signal Board</title>
+    <style>
+:root {
+  --bg: #f6f6f2;
+  --surface: #ffffff;
+  --surface-soft: #fbfaf7;
+  --ink: #171717;
+  --muted: #66645f;
+  --line: #d9d6ce;
+  --accent: #126a73;
+  --accent-warm: #b55231;
+  --good: #1f7a4d;
+  --warn: #9a6700;
+  --bad: #b42318;
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 26px 18px 48px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hero-main { min-width: 0; }
+
+.hero-headline {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.hero-headline > div { min-width: 0; }
+
+.hero-logo {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.hero-tag {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.hero h1 {
+  margin: 6px 0 0;
+  font-size: 36px;
+  line-height: 1.08;
+  overflow-wrap: break-word;
+}
+
+.hero-sub {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.hero-meta {
+  align-self: start;
+  display: grid;
+  gap: 4px;
+  min-width: 156px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.updated-label { color: var(--muted); font-size: 12px; }
+.updated { color: var(--ink); font-size: 13px; font-weight: 700; }
+
+.stats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 11px 12px;
+}
+
+.stat .k { font-size: 12px; color: var(--muted); }
+.stat .v { margin-top: 4px; font-size: 23px; font-weight: 700; }
+
+.coverage-strip {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.coverage-card {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 11px;
+  background: var(--surface-soft);
+}
+
+.coverage-card strong {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.coverage-label, .coverage-meta {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.coverage-card.ok strong { color: var(--good); }
+.coverage-card.warn strong { color: var(--warn); }
+.coverage-card.signal { border-color: rgba(18,106,115,.3); }
+.coverage-card.official { border-color: rgba(31,122,77,.28); }
+.coverage-card.builders { border-color: rgba(181,82,49,.32); }
+.coverage-card.aggregate { border-color: rgba(102,100,95,.32); }
+.coverage-card.private { border-color: rgba(154,103,0,.3); }
+
+.primary-controls {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+input, select {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 11px 12px;
+  font-size: 14px;
+}
+
+input:focus, select:focus, button:focus-visible, summary:focus-visible {
+  outline: 2px solid rgba(18,106,115,.35);
+  outline-offset: 2px;
+}
+
+.mode-hint { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+.advanced-panel {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.advanced-panel summary {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px 12px 42px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.advanced-panel summary::-webkit-details-marker { display: none; }
+
+.advanced-panel summary::before {
+  content: "+";
+  width: 18px;
+  height: 18px;
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.advanced-panel summary > span:first-child { min-width: 0; }
+.advanced-panel[open] summary::before { content: "-"; }
+
+.advanced-summary {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.advanced-content {
+  display: grid;
+  gap: 12px;
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.advanced-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, .8fr) auto auto;
+  gap: 10px;
+  align-items: end;
+  padding-top: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mode-switch {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-soft);
+}
+
+.mode-btn {
+  min-height: 40px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  padding: 0 13px;
+  font-size: 13px;
+}
+
+.mode-btn:first-child { border-left: 0; }
+.mode-btn.active { background: var(--accent); color: #fff; font-weight: 700; }
+
+.all-dedupe {
+  display: none;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
+.all-dedupe.show { display: inline-flex; }
+
+.all-dedupe input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.all-dedupe-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(23,23,23,.25);
+  background: rgba(23,23,23,.16);
+}
+
+.all-dedupe input:checked + .all-dedupe-dot {
+  border-color: rgba(18,106,115,.65);
+  background: var(--accent);
+}
+
+.source-health { display: grid; gap: 10px; }
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.health-metric {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 9px 10px;
+  background: var(--surface-soft);
+}
+
+.health-metric strong { font-size: 18px; }
+.health-label { color: var(--muted); font-size: 12px; }
+.health-metric.ok strong { color: var(--good); }
+.health-metric.warn strong { color: var(--warn); }
+.health-metric.bad strong { color: var(--bad); }
+
+.health-empty, .health-ok {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.health-ok {
+  color: var(--good);
+  border-style: solid;
+  background: rgba(31,122,77,.06);
+}
+
+.health-issues { display: grid; gap: 8px; }
+
+.health-issue {
+  border: 1px solid rgba(180,35,24,.22);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: rgba(180,35,24,.04);
+}
+
+.health-issue-title { color: var(--bad); font-size: 13px; font-weight: 700; }
+
+.health-issue ul {
+  margin: 7px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.site-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.pill {
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 6px 11px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.pill.active {
+  background: rgba(18,106,115,.11);
+  border-color: rgba(18,106,115,.5);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.list-wrap, .waytoagi-wrap {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.list-head, .waytoagi-head {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.list-head h2, .waytoagi-head h2 { margin: 0; font-size: 20px; }
+#resultCount, #waytoagiUpdatedAt { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+.news-list, .site-group-list, .source-group-list { display: grid; }
+
+.site-group {
+  min-width: 0;
+  border-top: 1px solid rgba(23,23,23,.08);
+}
+
+.site-group:first-child { border-top: 0; }
+
+.site-group-head, .source-group-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(23,23,23,.08);
+}
+
+.site-group-head { background: rgba(18,106,115,.06); }
+.source-group-head { background: rgba(181,82,49,.05); }
+.site-group-head h3, .source-group-head h3 { margin: 0; min-width: 0; }
+.site-group-head h3 { font-size: 16px; }
+.source-group-head h3 { font-size: 14px; }
+
+.site-group-head span, .source-group-head span {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.source-group {
+  min-width: 0;
+  border-top: 1px solid rgba(23,23,23,.06);
+}
+
+.source-group:first-child { border-top: 0; }
+
+.news-card {
+  min-width: 0;
+  padding: 13px 16px;
+  border-top: 1px solid rgba(23,23,23,.08);
+}
+
+.news-card:first-child { border-top: 0; }
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.site { font-weight: 700; color: #3f3d39; }
+
+.category, .source {
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.category { color: var(--ink); background: var(--surface-soft); }
+.category.kind-official { border-color: rgba(31,122,77,.34); color: var(--good); }
+.category.kind-newsletter { border-color: rgba(154,103,0,.34); color: var(--warn); }
+.category.kind-builders { border-color: rgba(181,82,49,.36); color: var(--accent-warm); }
+.category.kind-aggregate, .category.kind-blogs, .category.kind-aihub { color: var(--muted); }
+
+.time { margin-left: auto; }
+
+.title {
+  min-width: 0;
+  margin-top: 8px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 16px;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+.title-sub { color: var(--muted); font-size: 12px; line-height: 1.35; font-weight: 400; }
+.title:hover { color: var(--accent); }
+
+.empty { padding: 24px 16px; color: var(--muted); text-align: center; }
+
+.waytoagi-tools { display: inline-flex; align-items: center; gap: 10px; }
+
+.waytoagi-switch {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.waytoagi-btn {
+  min-height: 32px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.waytoagi-btn:first-child { border-left: 0; }
+.waytoagi-btn.active { background: var(--accent); color: #fff; font-weight: 700; }
+
+.waytoagi-meta {
+  padding: 12px 16px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.waytoagi-meta a { color: var(--accent); text-decoration: none; }
+
+.waytoagi-list { padding: 12px 16px 16px; display: grid; gap: 8px; }
+
+.waytoagi-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+  text-decoration: none;
+  border: 1px solid rgba(23,23,23,.08);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  color: var(--ink);
+  background: var(--surface-soft);
+}
+
+.waytoagi-item .d { color: var(--muted); font-size: 12px; }
+.waytoagi-item .t { min-width: 0; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+
+.waytoagi-empty, .waytoagi-error {
+  border-radius: var(--radius);
+  padding: 9px 10px;
+  font-size: 13px;
+}
+
+.waytoagi-empty { border: 1px dashed var(--line); color: var(--muted); }
+.waytoagi-error { border: 1px solid rgba(180,35,24,.28); background: rgba(180,35,24,.08); color: var(--bad); }
+
+@media (max-width: 760px) {
+  .shell { padding: 18px 12px 36px; }
+  .hero, .primary-controls, .advanced-controls, .waytoagi-head { grid-template-columns: 1fr; }
+  .advanced-panel summary { align-items: flex-start; flex-direction: column; }
+  .hero h1 { font-size: 28px; }
+  .hero-logo { width: 50px; height: 50px; }
+  .hero-meta { min-width: 0; }
+  .stats, .coverage-strip, .health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mode-hint, .advanced-summary, #resultCount, #waytoagiUpdatedAt { white-space: normal; }
+  .time { margin-left: 0; }
+  .waytoagi-head { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 460px) {
+  .hero-headline { align-items: flex-start; }
+  .stats, .coverage-strip, .health-grid { grid-template-columns: 1fr; }
+  .waytoagi-tools { align-items: flex-start; flex-direction: column; }
+}
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="hero-main">
+          <div class="hero-headline">
+            <svg class="hero-logo" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="56" height="56" rx="8" fill="#fbfaf7"/>
+              <circle cx="28" cy="28" r="20" stroke="#126a73" stroke-width="1.2" opacity=".25"/>
+              <circle cx="28" cy="28" r="13" stroke="#126a73" stroke-width="1.2" opacity=".45"/>
+              <circle cx="28" cy="28" r="6" stroke="#126a73" stroke-width="1.4"/>
+              <line x1="28" y1="8" x2="28" y2="48" stroke="#126a73" stroke-width=".8" opacity=".2"/>
+              <line x1="8" y1="28" x2="48" y2="28" stroke="#126a73" stroke-width=".8" opacity=".2"/>
+              <line x1="14" y1="14" x2="42" y2="42" stroke="#126a73" stroke-width=".7" opacity=".14"/>
+              <line x1="42" y1="14" x2="14" y2="42" stroke="#126a73" stroke-width=".7" opacity=".14"/>
+              <path d="M28 28 L40 16" stroke="#126a73" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="40" cy="16" r="3" fill="#126a73"/>
+              <circle cx="28" cy="28" r="2.5" fill="#126a73"/>
             </svg>
-            AI 信号流
-            <span class="count-badge" id="feedCount">0</span>
-          </div>
-          <span class="sort-label">按时间倒序</span>
-        </div>
-        <div id="newsFeed"></div>
-        <div class="no-results" id="noResults">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <div style="font-size:13px">没有找到匹配的信号</div>
-          <div style="font-size:12px;margin-top:4px">尝试调整搜索词或筛选条件</div>
-        </div>
-      </div>
-
-      <!-- Sidebar -->
-      <aside class="sidebar">
-
-        <!-- WaytoAGI -->
-        <div class="sidebar-card">
-          <div class="sidebar-header">
-            <div class="sidebar-title">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-              </svg>
-              WaytoAGI 更新日志
-            </div>
-            <div class="s-toggle">
-              <button class="s-btn active" id="wtaToday" onclick="setWTA('today')">今日</button>
-              <button class="s-btn" id="wtaWeek" onclick="setWTA('week')">近7日</button>
+            <div>
+              <p class="hero-tag">AI NEWS INTELLIGENCE</p>
+              <h1>24 小时 AI 更新雷达</h1>
             </div>
           </div>
-          <div id="wtaList"></div>
+          <p class="hero-sub">
+            高信号 AI/科技更新，附 WaytoAGI 近 7 日变化。
+          </p>
+        </div>
+        <div class="hero-meta">
+          <span class="updated-label">更新时间</span>
+          <span class="updated" id="updatedAt">加载中...</span>
         </div>
 
-        <!-- Source health -->
-        <div class="sidebar-card">
-          <div class="sidebar-header">
-            <div class="sidebar-title">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-              </svg>
-              来源健康状态
+        <section class="stats" id="stats"></section>
+        <section class="coverage-strip" id="coverageStrip" aria-label="Source coverage status"></section>
+      </header>
+
+      <section class="primary-controls">
+        <input id="searchInput" type="search" placeholder="搜索 AI 信号 / 来源" />
+        <div class="mode-hint" id="modeHint">AI强相关</div>
+      </section>
+
+      <details class="advanced-panel">
+        <summary>
+          <span>高级筛选与源状态</span>
+          <span class="advanced-summary" id="advancedSummary">加载中...</span>
+        </summary>
+        <div class="advanced-content">
+          <div class="advanced-controls">
+            <label class="field">
+              <span>站点</span>
+              <select id="siteSelect">
+                <option value="">全部站点</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>视图</span>
+              <div class="mode-switch">
+                <button id="modeAiBtn" class="mode-btn active" type="button">AI强相关</button>
+                <button id="modeAllBtn" class="mode-btn" type="button">全量</button>
+              </div>
             </div>
+            <label id="allDedupeWrap" class="all-dedupe" for="allDedupeToggle">
+              <input id="allDedupeToggle" type="checkbox" checked />
+              <span class="all-dedupe-dot"></span>
+              <span id="allDedupeLabel">去重开</span>
+            </label>
           </div>
-          <div id="statusList"></div>
+          <div class="source-health" id="sourceHealth">源状态加载中...</div>
+          <section class="site-pills" id="sitePills"></section>
         </div>
+      </details>
 
-      </aside>
-    </div>
-  </div>
-</main>
+      <section class="waytoagi-wrap">
+        <div class="waytoagi-head">
+          <h2>WaytoAGI 更新日志</h2>
+          <div class="waytoagi-tools">
+            <div class="waytoagi-switch">
+              <button id="waytoagiTodayBtn" class="waytoagi-btn active" type="button">最近更新日</button>
+              <button id="waytoagi7dBtn" class="waytoagi-btn" type="button">近7日</button>
+            </div>
+            <span id="waytoagiUpdatedAt">加载中...</span>
+          </div>
+        </div>
+        <div id="waytoagiMeta" class="waytoagi-meta"></div>
+        <div id="waytoagiList" class="waytoagi-list"></div>
+      </section>
 
-<footer>
-  <div class="container">
-    数据来源：各 AI 公司官方博客 · Newsletter ·
-    <a href="#">WaytoAGI</a> · <a href="#">Hugging Face</a>
-    &nbsp;|&nbsp; 由 <a href="#">LearnPrompt</a> 维护 &nbsp;|&nbsp; 制作于 2026
-  </div>
-</footer>
+      <section class="list-wrap">
+        <div class="list-head">
+          <h2 id="listTitle">AI 信号流</h2>
+          <span id="resultCount">0 条</span>
+        </div>
+        <div id="newsList" class="news-list"></div>
+      </section>
+    </main>
 
-<script>
-/* ── Data ─────────────────────────────────────────────────────────────────── */
+    <template id="itemTpl">
+      <article class="news-card">
+        <div class="meta-row">
+          <span class="site"></span>
+          <span class="category"></span>
+          <span class="source"></span>
+          <time class="time"></time>
+        </div>
+        <a class="title" target="_blank" rel="noopener noreferrer"></a>
+      </article>
+    </template>
+
+    <script>
+/* ── Mock data (replaces JSON fetches) ─────────────────────────────────────── */
 
 const NOW = new Date('2026-05-03T14:30:00Z');
 
@@ -731,425 +696,621 @@ function ago(mins) {
   return new Date(NOW.getTime() - mins * 60000).toISOString();
 }
 
-const NEWS = [
-  {
-    id: 1, isAI: true,
-    title: 'GPT-5 Turbo: 2M Context Window, Faster Reasoning, and Multimodal Upgrades',
-    titleZh: 'GPT-5 Turbo 发布：200万词上下文、更快推理与多模态能力升级',
-    source: 'OpenAI Blog', sourceKey: 'openai', time: ago(45), url: '#',
-  },
-  {
-    id: 2, isAI: true,
-    title: 'Introducing Claude 4.5 Haiku: The Fastest Model in the Claude Family',
-    titleZh: 'Claude 4.5 Haiku 发布：Claude 系列目前最快的模型',
-    source: 'Anthropic', sourceKey: 'anthropic', time: ago(72), url: '#',
-  },
-  {
-    id: 3, isAI: true,
-    title: 'Gemini 2.5 Ultra Sets New SOTA on Math and Coding Benchmarks',
-    titleZh: 'Gemini 2.5 Ultra 在数学与代码基准测试中创下新 SOTA',
-    source: 'Google DeepMind', sourceKey: 'deepmind', time: ago(95), url: '#',
-  },
-  {
-    id: 4, isAI: true,
-    title: 'Llama 4 Scout & Maverick: Open-Source MoE Models with 128 Experts',
-    titleZh: 'Llama 4 Scout 与 Maverick 开源：128专家的混合专家架构模型',
-    source: 'Meta AI', sourceKey: 'meta', time: ago(130), url: '#',
-  },
-  {
-    id: 5, isAI: true,
-    title: 'Grok 3.5: Real-Time Web Search + Native Image Generation Now Live',
-    titleZh: 'Grok 3.5 上线：实时网络搜索与原生图像生成正式可用',
-    source: 'xAI', sourceKey: 'xai', time: ago(158), url: '#',
-  },
-  {
-    id: 6, isAI: true,
-    title: 'Mistral Medium 3: Enterprise Performance at a Competitive Price Point',
-    titleZh: 'Mistral Medium 3：具竞争力定价下的企业级性能',
-    source: 'Mistral AI', sourceKey: 'mistral', time: ago(190), url: '#',
-  },
-  {
-    id: 7, isAI: true,
-    title: 'SmolLM3 Released: A 3B Parameter Model That Runs on Mobile Devices',
-    titleZh: 'SmolLM3 发布：可在移动设备上运行的 30亿参数模型',
-    source: 'Hugging Face', sourceKey: 'huggingface', time: ago(215), url: '#',
-  },
-  {
-    id: 8, isAI: true,
-    title: 'AlphaFold 4 Predicts Protein–RNA Complexes with Atomic Accuracy',
-    titleZh: 'AlphaFold 4 以原子级精度预测蛋白质—RNA 复合物',
-    source: 'Google DeepMind', sourceKey: 'deepmind', time: ago(245), url: '#',
-  },
-  {
-    id: 9, isAI: true,
-    title: 'OpenAI Operator API: Give Your Agent a Browser — Now in Early Access',
-    titleZh: 'OpenAI Operator API：为智能体赋予浏览器控制能力，开放早期访问',
-    source: 'OpenAI Blog', sourceKey: 'openai', time: ago(270), url: '#',
-  },
-  {
-    id: 10, isAI: true,
-    title: 'Cohere Command R+ 2026: 100K Context with Improved RAG Pipeline',
-    titleZh: 'Cohere Command R+ 2026：10万词上下文与改进的 RAG 流水线',
-    source: 'Cohere', sourceKey: 'cohere', time: ago(305), url: '#',
-  },
-  {
-    id: 11, isAI: false,
-    title: 'NVIDIA Blackwell Ultra Announced: 3× Performance Over H100 for AI Training',
-    titleZh: '英伟达发布 Blackwell Ultra：AI 训练性能是 H100 的 3 倍',
-    source: 'NVIDIA', sourceKey: 'nvidia', time: ago(320), url: '#',
-  },
-  {
-    id: 12, isAI: true,
-    title: 'Anthropic Releases Model Specification 2.0 with Nuanced Safety Guidelines',
-    titleZh: 'Anthropic 发布模型规范 2.0，更新 Claude 安全准则细则',
-    source: 'Anthropic', sourceKey: 'anthropic', time: ago(340), url: '#',
-  },
-  {
-    id: 13, isAI: true,
-    title: 'Paper: Chain-of-Draft Prompting Cuts Token Usage 60% on Reasoning Tasks',
-    titleZh: '论文：Chain-of-Draft 提示在推理任务中减少 60% token 消耗',
-    source: 'arXiv AI', sourceKey: 'arxiv', time: ago(360), url: '#',
-  },
-  {
-    id: 14, isAI: false,
-    title: 'Microsoft Azure Expands AI Infrastructure with 50 New Global Data Centers',
-    titleZh: '微软 Azure 新增 50 个全球数据中心以支撑 AI 基础设施',
-    source: 'Microsoft AI', sourceKey: 'microsoft', time: ago(380), url: '#',
-  },
-  {
-    id: 15, isAI: true,
-    title: 'DeepSeek V4: 671B MoE Model with Breakthrough Code and Math Capabilities',
-    titleZh: 'DeepSeek V4：6710亿参数 MoE 模型，代码与数学能力大幅突破',
-    source: 'DeepSeek', sourceKey: 'deepseek', time: ago(405), url: '#',
-  },
-  {
-    id: 16, isAI: true,
-    title: 'Google Veo 3: Next-Gen Video Generation with Native Audio Synthesis',
-    titleZh: 'Google Veo 3：内置音频合成的下一代视频生成模型',
-    source: 'Google DeepMind', sourceKey: 'deepmind', time: ago(435), url: '#',
-  },
-  {
-    id: 17, isAI: true,
-    title: 'Stable Diffusion XL 3: Photorealistic 4K Image Generation Released',
-    titleZh: 'Stable Diffusion XL 3 发布：4K 分辨率照片级真实感图像生成',
-    source: 'Stability AI', sourceKey: 'stability', time: ago(450), url: '#',
-  },
-  {
-    id: 18, isAI: false,
-    title: 'EU AI Act Compliance Deadline: A Practical Guide for Enterprises',
-    titleZh: '欧盟 AI 法案合规截止日：企业实用指南',
-    source: 'AI Policy Weekly', sourceKey: 'aipolicy', time: ago(475), url: '#',
-  },
-  {
-    id: 19, isAI: true,
-    title: 'Apple Intelligence 3.0 Ships with iOS 20: On-Device 8B Parameter LLM',
-    titleZh: 'Apple Intelligence 3.0 随 iOS 20 发布：端侧 80亿参数大模型',
-    source: 'Apple', sourceKey: 'apple', time: ago(500), url: '#',
-  },
-  {
-    id: 20, isAI: true,
-    title: 'Paper: Constitutional Distillation Proposed as Scalable Successor to RLHF',
-    titleZh: '论文：Constitutional Distillation 作为 RLHF 可扩展替代方案被提出',
-    source: 'arXiv AI', sourceKey: 'arxiv', time: ago(520), url: '#',
-  },
-  {
-    id: 21, isAI: true,
-    title: 'Runway Gen-4: Cinema-Quality 4-Minute Video Generation with Sound',
-    titleZh: 'Runway Gen-4：4分钟时长、电影级画质、含音效的视频生成',
-    source: 'Runway', sourceKey: 'runway', time: ago(545), url: '#',
-  },
-  {
-    id: 22, isAI: false,
-    title: 'AWS Bedrock Agents v2 Launches with Multi-Agent Orchestration Support',
-    titleZh: 'AWS Bedrock Agents v2 发布，支持多智能体编排',
-    source: 'AWS AI', sourceKey: 'aws', time: ago(565), url: '#',
-  },
-  {
-    id: 23, isAI: true,
-    title: 'Baidu ERNIE 5.0 Surpasses GPT-5 on Chinese Language Benchmarks',
-    titleZh: '百度文心 5.0 在中文语言基准测试中超越 GPT-5',
-    source: 'Baidu AI', sourceKey: 'baidu', time: ago(580), url: '#',
-  },
-  {
-    id: 24, isAI: true,
-    title: 'OpenAI o4-mini: Low-Cost Reasoning Model Optimized for STEM',
-    titleZh: 'OpenAI o4-mini：针对 STEM 领域优化的低成本推理模型',
-    source: 'OpenAI Blog', sourceKey: 'openai', time: ago(600), url: '#',
-  },
-  {
-    id: 25, isAI: true,
-    title: 'Anthropic Research: Mechanistic Interpretability Reveals Concept Circuits in Claude',
-    titleZh: 'Anthropic 研究：机制可解释性揭示 Claude 内部的"概念回路"',
-    source: 'Anthropic', sourceKey: 'anthropic', time: ago(625), url: '#',
-  },
-  {
-    id: 26, isAI: false,
-    title: 'Perplexity AI Raises $500M Series E at $9B Valuation',
-    titleZh: 'Perplexity AI 完成 5亿美元 E 轮融资，估值达 90 亿美元',
-    source: 'TechCrunch AI', sourceKey: 'techcrunch', time: ago(650), url: '#',
-  },
-  {
-    id: 27, isAI: true,
-    title: 'Microsoft Copilot Gains AI Notebook: Long-Form Reasoning Workspace',
-    titleZh: 'Microsoft Copilot 新增 AI Notebook：长格式推理工作区',
-    source: 'Microsoft AI', sourceKey: 'microsoft', time: ago(665), url: '#',
-  },
-  {
-    id: 28, isAI: true,
-    title: 'Paper: Test-Time Compute Scaling Consistently Improves LLM Quality',
-    titleZh: '论文：测试时计算扩展持续提升大模型输出质量',
-    source: 'arXiv AI', sourceKey: 'arxiv', time: ago(685), url: '#',
-  },
-];
-
-const WAYTOAGI = {
-  today: [
-    {
-      time: '10:15',
-      text: '<strong>OpenAI GPT-5 Turbo</strong> 正式发布，200万词上下文，API 价格下降 30%，多模态能力大幅提升。',
-    },
-    {
-      time: '09:30',
-      text: '<strong>Claude 4.5 Haiku</strong> 上线，推理速度提升 3×，成本降低 50%，已向开发者开放 API。',
-    },
-    {
-      time: '08:45',
-      text: 'Google <strong>Veo 3</strong> 发布，支持带配乐的 4K 视频生成，单次最长 4 分钟，向创作者开放测试。',
-    },
-    {
-      time: '08:00',
-      text: '<strong>DeepSeek V4</strong> 技术报告发布，671B MoE 架构，HumanEval 上代码能力达 95.8%。',
-    },
-    {
-      time: '07:20',
-      text: '<strong>iOS 20 Beta</strong> 发布，Apple Intelligence 3.0 首次搭载端侧 8B 参数模型，无需联网。',
-    },
-    {
-      time: '06:50',
-      text: '<strong>AlphaFold 4</strong> 论文登上 Nature 封面，实现蛋白质–RNA 复合物原子级结构预测。',
-    },
+const MOCK_NEWS = {
+  generated_at: NOW.toISOString(),
+  total_items: 28,
+  site_count: 9,
+  source_count: 14,
+  archive_total: 1840,
+  items_ai: [
+    { site_id:'official_ai', site_name:'OpenAI',         source:'Blog',         title_zh:'GPT-5 Turbo 发布：200万词上下文、更快推理与多模态升级',                          title_en:'GPT-5 Turbo: 2M Context Window, Faster Reasoning, and Multimodal Upgrades',                      url:'#', published_at: ago(45)  },
+    { site_id:'official_ai', site_name:'Anthropic',      source:'News',         title_zh:'Claude 4.5 Haiku 发布：Claude 系列目前最快的模型',                             title_en:'Introducing Claude 4.5 Haiku: The Fastest Model in the Claude Family',                           url:'#', published_at: ago(72)  },
+    { site_id:'official_ai', site_name:'Google DeepMind',source:'Research',     title_zh:'Gemini 2.5 Ultra 在数学与代码基准测试中创下新 SOTA',                           title_en:'Gemini 2.5 Ultra Sets New SOTA on Math and Coding Benchmarks',                                   url:'#', published_at: ago(95)  },
+    { site_id:'official_ai', site_name:'Meta AI',        source:'Blog',         title_zh:'Llama 4 Scout 与 Maverick 开源：128专家混合专家架构',                          title_en:'Llama 4 Scout & Maverick: Open-Source MoE Models with 128 Experts',                             url:'#', published_at: ago(130) },
+    { site_id:'official_ai', site_name:'xAI',            source:'Blog',         title_zh:'Grok 3.5 上线：实时搜索与原生图像生成正式可用',                                title_en:'Grok 3.5: Real-Time Web Search + Native Image Generation Now Live',                              url:'#', published_at: ago(158) },
+    { site_id:'official_ai', site_name:'Mistral AI',     source:'Blog',         title_zh:'Mistral Medium 3：具竞争力定价下的企业级性能',                                 title_en:'Mistral Medium 3: Enterprise Performance at a Competitive Price Point',                          url:'#', published_at: ago(190) },
+    { site_id:'official_ai', site_name:'Anthropic',      source:'Research',     title_zh:'Anthropic 发布模型规范 2.0，更新 Claude 安全准则细则',                         title_en:'Anthropic Releases Model Specification 2.0 with Nuanced Safety Guidelines',                       url:'#', published_at: ago(215) },
+    { site_id:'official_ai', site_name:'Google DeepMind',source:'Research',     title_zh:'AlphaFold 4 以原子级精度预测蛋白质—RNA 复合物',                               title_en:'AlphaFold 4 Predicts Protein–RNA Complexes with Atomic Accuracy',                               url:'#', published_at: ago(245) },
+    { site_id:'official_ai', site_name:'OpenAI',         source:'Dev',          title_zh:'OpenAI Operator API 开放早期访问：为智能体赋予浏览器控制能力',                  title_en:'OpenAI Operator API: Give Your Agent a Browser — Now in Early Access',                           url:'#', published_at: ago(270) },
+    { site_id:'official_ai', site_name:'Cohere',         source:'Blog',         title_zh:'Cohere Command R+ 2026：10万词上下文与改进的 RAG 流水线',                      title_en:'Cohere Command R+ 2026: 100K Context with Improved RAG Pipeline',                                url:'#', published_at: ago(305) },
+    { site_id:'official_ai', site_name:'Google DeepMind',source:'Blog',         title_zh:'Google Veo 3：内置音频合成的下一代视频生成模型',                               title_en:'Google Veo 3: Next-Gen Video Generation with Native Audio Synthesis',                            url:'#', published_at: ago(435) },
+    { site_id:'official_ai', site_name:'Apple',          source:'News',         title_zh:'Apple Intelligence 3.0 随 iOS 20 发布：端侧 80亿参数大模型',                  title_en:'Apple Intelligence 3.0 Ships with iOS 20: On-Device 8B Parameter LLM',                          url:'#', published_at: ago(500) },
+    { site_id:'official_ai', site_name:'OpenAI',         source:'Research',     title_zh:'OpenAI o4-mini：针对 STEM 领域优化的低成本推理模型',                           title_en:'OpenAI o4-mini: Low-Cost Reasoning Model Optimized for STEM',                                   url:'#', published_at: ago(600) },
+    { site_id:'official_ai', site_name:'Anthropic',      source:'Research',     title_zh:'机制可解释性揭示 Claude 内部"概念回路"',                                       title_en:'Mechanistic Interpretability Reveals Concept Circuits in Claude',                                 url:'#', published_at: ago(625) },
+    { site_id:'aibreakfast', site_name:'AI Breakfast',   source:'日报',          title_zh:'今日 AI 要闻：GPT-5 Turbo 与 Claude 4.5 Haiku 同日发布',                      title_en:'Today in AI: GPT-5 Turbo and Claude 4.5 Haiku Launch on the Same Day',                           url:'#', published_at: ago(180) },
+    { site_id:'aibreakfast', site_name:'AI Breakfast',   source:'日报',          title_zh:'一周 AI 产业动态：模型价格战进入白热化阶段',                                   title_en:'Weekly AI Industry Update: Model Price Wars Intensify',                                          url:'#', published_at: ago(350) },
+    { site_id:'followbuilders', site_name:'Follow Builders', source:'X/Twitter', title_zh:'Andrej Karpathy：测试时计算扩展是今年最重要的研究方向',                        title_en:'Andrej Karpathy: Test-Time Compute Scaling is the Most Important Research Direction This Year',  url:'#', published_at: ago(220) },
+    { site_id:'followbuilders', site_name:'Follow Builders', source:'X/Twitter', title_zh:'Sam Altman：AGI 比我们预期的来得更快',                                         title_en:'Sam Altman: AGI is Coming Faster Than We Expected',                                              url:'#', published_at: ago(390) },
+    { site_id:'followbuilders', site_name:'Follow Builders', source:'X/Twitter', title_zh:'Yann LeCun：LLM 并非通向 AGI 的正确路径',                                     title_en:'Yann LeCun: LLMs Are Not the Right Path to AGI',                                                url:'#', published_at: ago(460) },
+    { site_id:'bestblogs',   site_name:'Best Blogs',     source:'技术博客',      title_zh:'论文解读：Chain-of-Draft 在推理任务中减少 60% token 消耗',                     title_en:'Paper Review: Chain-of-Draft Cuts Token Usage 60% on Reasoning Tasks',                           url:'#', published_at: ago(360) },
+    { site_id:'bestblogs',   site_name:'Best Blogs',     source:'技术博客',      title_zh:'Constitutional Distillation：RLHF 的可扩展替代方案',                           title_en:'Constitutional Distillation: A Scalable Successor to RLHF',                                      url:'#', published_at: ago(520) },
+    { site_id:'bestblogs',   site_name:'Best Blogs',     source:'技术博客',      title_zh:'DeepSeek V4 技术解析：671B MoE 架构如何实现高效推理',                          title_en:'DeepSeek V4 Technical Deep Dive: How 671B MoE Achieves Efficient Inference',                    url:'#', published_at: ago(580) },
+    { site_id:'aihubtoday',  site_name:'AI Hub',         source:'AI热点',        title_zh:'Runway Gen-4：4分钟时长、电影级视频生成正式商用',                              title_en:'Runway Gen-4: Cinema-Quality 4-Minute Video Generation Goes Commercial',                         url:'#', published_at: ago(545) },
+    { site_id:'aihubtoday',  site_name:'AI Hub',         source:'AI热点',        title_zh:'Stable Diffusion XL 3：4K 分辨率照片级真实感图像生成',                         title_en:'Stable Diffusion XL 3: Photorealistic 4K Image Generation Released',                            url:'#', published_at: ago(450) },
+    { site_id:'tophub',      site_name:'TopHub',         source:'聚合',          title_zh:'Perplexity AI 完成 5亿美元融资，估值达 90 亿美元',                             title_en:'Perplexity AI Raises $500M Series E at $9B Valuation',                                          url:'#', published_at: ago(650) },
+    { site_id:'tophub',      site_name:'TopHub',         source:'聚合',          title_zh:'英伟达 Blackwell Ultra 发布：AI 训练性能是 H100 的 3 倍',                      title_en:'NVIDIA Blackwell Ultra: 3× Performance Over H100 for AI Training',                               url:'#', published_at: ago(320) },
+    { site_id:'tophub',      site_name:'TopHub',         source:'聚合',          title_zh:'AWS Bedrock Agents v2 发布，支持多智能体编排',                                  title_en:'AWS Bedrock Agents v2 Launches with Multi-Agent Orchestration Support',                          url:'#', published_at: ago(565) },
+    { site_id:'tophub',      site_name:'TopHub',         source:'聚合',          title_zh:'Microsoft Copilot 新增 AI Notebook：长格式推理工作区',                         title_en:'Microsoft Copilot Gains AI Notebook: Long-Form Reasoning Workspace',                            url:'#', published_at: ago(665) },
   ],
-  week: [
-    { time: '5月2日', text: '<strong>Mistral Medium 3</strong> 发布，多项企业级基准超越 GPT-4o，定价更具竞争力。' },
-    { time: '5月2日', text: '<strong>SmolLM3</strong> 开源，3B 参数，MIT 许可证，移动端可流畅运行。' },
-    { time: '5月1日', text: 'OpenAI <strong>Operator API</strong> 开放企业测试，AI 代理可直接控制浏览器执行复杂任务。' },
-    { time: '5月1日', text: '<strong>Runway Gen-4</strong> 商业版上线，4K 视频生成，Adobe Premiere 插件同步发布。' },
-    { time: '4月30日', text: '<strong>Chain-of-Draft</strong> 论文引发广泛讨论：推理任务减少 60% token，不影响准确率。' },
-    { time: '4月30日', text: '<strong>Perplexity AI</strong> 完成 5亿美元融资，估值 90 亿美元，宣布进军企业搜索市场。' },
-    { time: '4月29日', text: 'Anthropic 发布 <strong>Model Specification 2.0</strong>，更新 Claude 价值观框架与安全准则细则。' },
-    { time: '4月29日', text: '<strong>NVIDIA Blackwell Ultra</strong> 发布，单卡 FP8 算力达 5 PFLOPS，AI 训练集群专属优化。' },
-    { time: '4月28日', text: 'Meta <strong>Llama 4 Scout & Maverick</strong> 开源，128专家 MoE 架构，商业许可更宽松。' },
-    { time: '4月28日', text: '<strong>Grok 3.5</strong> 上线，集成实时搜索与 FLUX 图像生成，X Premium+ 用户免费使用。' },
+  site_stats: [
+    { site_id:'official_ai',    site_name:'官方 AI 博客',    count:14, raw_count:18 },
+    { site_id:'tophub',         site_name:'TopHub',          count:4,  raw_count:5  },
+    { site_id:'bestblogs',      site_name:'Best Blogs',      count:3,  raw_count:3  },
+    { site_id:'followbuilders', site_name:'Follow Builders', count:3,  raw_count:4  },
+    { site_id:'aibreakfast',    site_name:'AI Breakfast',    count:2,  raw_count:2  },
+    { site_id:'aihubtoday',     site_name:'AI Hub',          count:2,  raw_count:2  },
   ],
 };
 
-const STATUS = [
-  { name: 'OpenAI Blog',       status: 'good' },
-  { name: 'Anthropic News',    status: 'good' },
-  { name: 'Google DeepMind',   status: 'good' },
-  { name: 'Meta AI Blog',      status: 'good' },
-  { name: 'Hugging Face',      status: 'good' },
-  { name: 'arXiv cs.AI',       status: 'good' },
-  { name: 'Mistral AI',        status: 'good' },
-  { name: 'xAI Blog',          status: 'good' },
-  { name: 'DeepSeek',          status: 'warn' },
-  { name: 'Stability AI',      status: 'good' },
-  { name: 'Cohere Blog',       status: 'good' },
-  { name: 'AWS AI Blog',       status: 'good' },
-];
+const MOCK_WAYTOAGI = {
+  generated_at: NOW.toISOString(),
+  latest_date: '2026-05-03',
+  count_today: 6,
+  count_7d: 16,
+  root_url: '#',
+  history_url: '#',
+  updates_today: [
+    { date:'2026-05-03', title:'GPT-5 Turbo 正式发布，200万词上下文，API 价格下降 30%，多模态能力大幅提升', url:'#' },
+    { date:'2026-05-03', title:'Claude 4.5 Haiku 上线，推理速度提升 3×，成本降低 50%，已向开发者开放 API', url:'#' },
+    { date:'2026-05-03', title:'Google Veo 3 发布，支持带配乐的 4K 视频生成，单次最长 4 分钟', url:'#' },
+    { date:'2026-05-03', title:'DeepSeek V4 技术报告发布，671B MoE 架构，HumanEval 代码能力达 95.8%', url:'#' },
+    { date:'2026-05-03', title:'Apple Intelligence 3.0 随 iOS 20 Beta 发布，搭载端侧 8B 参数模型，无需联网', url:'#' },
+    { date:'2026-05-03', title:'AlphaFold 4 登上 Nature 封面，实现蛋白质–RNA 复合物原子级结构预测', url:'#' },
+  ],
+  updates_7d: [
+    { date:'2026-05-03', title:'GPT-5 Turbo 正式发布，200万词上下文，API 价格下降 30%，多模态能力大幅提升', url:'#' },
+    { date:'2026-05-03', title:'Claude 4.5 Haiku 上线，推理速度提升 3×，成本降低 50%，向开发者开放 API', url:'#' },
+    { date:'2026-05-03', title:'Google Veo 3 发布，支持带配乐的 4K 视频生成，单次最长 4 分钟', url:'#' },
+    { date:'2026-05-03', title:'Apple Intelligence 3.0 随 iOS 20 Beta 发布，端侧 8B 参数模型', url:'#' },
+    { date:'2026-05-03', title:'AlphaFold 4 登上 Nature 封面，蛋白质–RNA 复合物原子级预测', url:'#' },
+    { date:'2026-05-02', title:'Mistral Medium 3 发布，多项企业级基准超越 GPT-4o，价格更具竞争力', url:'#' },
+    { date:'2026-05-02', title:'SmolLM3 开源，3B 参数，MIT 许可证，移动端可流畅运行', url:'#' },
+    { date:'2026-05-01', title:'OpenAI Operator API 开放企业测试，AI 代理可直接控制浏览器', url:'#' },
+    { date:'2026-05-01', title:'Runway Gen-4 商业版上线，4K 视频生成，Adobe Premiere 插件同步发布', url:'#' },
+    { date:'2026-04-30', title:'Chain-of-Draft 论文引发广泛讨论：推理任务减少 60% token，不影响准确率', url:'#' },
+    { date:'2026-04-30', title:'Perplexity AI 完成 5亿美元融资，估值 90 亿美元，宣布进军企业搜索市场', url:'#' },
+    { date:'2026-04-29', title:'Anthropic 发布模型规范 2.0，更新 Claude 价值观框架与安全准则细则', url:'#' },
+    { date:'2026-04-29', title:'NVIDIA Blackwell Ultra 发布，单卡 FP8 算力达 5 PFLOPS，AI 训练集群专属', url:'#' },
+    { date:'2026-04-28', title:'Meta Llama 4 Scout & Maverick 开源，128专家 MoE，商业许可更宽松', url:'#' },
+    { date:'2026-04-28', title:'Grok 3.5 上线，集成实时搜索与 FLUX 图像生成，X Premium+ 免费使用', url:'#' },
+    { date:'2026-04-27', title:'DeepSeek V4 671B MoE 模型发布，代码与数学能力大幅突破', url:'#' },
+  ],
+};
 
-/* ── State ─────────────────────────────────────────────────────────────────── */
+const MOCK_STATUS = {
+  successful_sites: 8,
+  failed_sites: [],
+  zero_item_sites: ['aibase'],
+  items_before_topic_filter: 312,
+  fetched_raw_items: 428,
+  sites: [
+    { site_id:'official_ai',    site_name:'官方 AI 博客',    item_count:14 },
+    { site_id:'aibreakfast',    site_name:'AI Breakfast',    item_count:2  },
+    { site_id:'followbuilders', site_name:'Follow Builders', item_count:3  },
+    { site_id:'bestblogs',      site_name:'Best Blogs',      item_count:3  },
+    { site_id:'tophub',         site_name:'TopHub',          item_count:4  },
+    { site_id:'aihubtoday',     site_name:'AI Hub',          item_count:2  },
+    { site_id:'zeli',           site_name:'Zeli',            item_count:18 },
+    { site_id:'newsnow',        site_name:'NewsNow',         item_count:22 },
+    { site_id:'aibase',         site_name:'AIBase',          item_count:0  },
+  ],
+  rss_opml: { enabled: false },
+};
+
+/* ── App ───────────────────────────────────────────────────────────────────── */
 
 const state = {
-  search: '',
-  site: 'all',
+  itemsAi: [],
+  itemsAll: [],
+  itemsAllRaw: [],
+  statsAi: [],
+  totalAi: 0,
+  totalRaw: 0,
+  totalAllMode: 0,
+  allDedup: true,
+  siteFilter: '',
+  query: '',
   mode: 'ai',
-  dedup: true,
-  wta: 'today',
+  waytoagiMode: 'today',
+  waytoagiData: null,
+  sourceStatus: null,
+  generatedAt: null,
 };
 
-/* ── Bootstrap ─────────────────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+const statsEl          = $('stats');
+const siteSelectEl     = $('siteSelect');
+const sitePillsEl      = $('sitePills');
+const newsListEl       = $('newsList');
+const updatedAtEl      = $('updatedAt');
+const searchInputEl    = $('searchInput');
+const resultCountEl    = $('resultCount');
+const listTitleEl      = $('listTitle');
+const itemTpl          = $('itemTpl');
+const modeAiBtnEl      = $('modeAiBtn');
+const modeAllBtnEl     = $('modeAllBtn');
+const modeHintEl       = $('modeHint');
+const allDedupeWrapEl  = $('allDedupeWrap');
+const allDedupeToggleEl= $('allDedupeToggle');
+const allDedupeLabelEl = $('allDedupeLabel');
+const advancedSummaryEl= $('advancedSummary');
+const sourceHealthEl   = $('sourceHealth');
+const waytoagiUpdatedAtEl = $('waytoagiUpdatedAt');
+const waytoagiMetaEl   = $('waytoagiMeta');
+const waytoagiListEl   = $('waytoagiList');
+const waytoagiTodayBtnEl = $('waytoagiTodayBtn');
+const waytoagi7dBtnEl  = $('waytoagi7dBtn');
+const coverageStripEl  = $('coverageStrip');
+
+const SOURCE_KINDS = {
+  official_ai:   { label: '官方',       tone: 'official'   },
+  aibreakfast:   { label: '日报',       tone: 'newsletter' },
+  followbuilders:{ label: 'Builders/X', tone: 'builders'   },
+  techurls:      { label: '聚合',       tone: 'aggregate'  },
+  buzzing:       { label: '聚合',       tone: 'aggregate'  },
+  iris:          { label: '聚合',       tone: 'aggregate'  },
+  bestblogs:     { label: '博客',       tone: 'blogs'      },
+  tophub:        { label: '聚合',       tone: 'aggregate'  },
+  zeli:          { label: '聚合',       tone: 'aggregate'  },
+  aihubtoday:    { label: 'AI站点',     tone: 'aihub'      },
+  aibase:        { label: 'AI站点',     tone: 'aihub'      },
+  newsnow:       { label: '聚合',       tone: 'aggregate'  },
+};
+
+function fmt(n) { return new Intl.NumberFormat('zh-CN').format(n || 0); }
+
+function fmtTime(iso) {
+  if (!iso) return '时间未知';
+  const d = new Date(iso);
+  if (isNaN(d)) return '时间未知';
+  return new Intl.DateTimeFormat('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(d);
+}
+
+function fmtDate(iso) {
+  if (!iso) return '未知日期';
+  const d = new Date(`${iso}T00:00:00`);
+  if (isNaN(d)) return iso;
+  return new Intl.DateTimeFormat('zh-CN', { month:'2-digit', day:'2-digit' }).format(d);
+}
+
+function sourceKind(siteId) {
+  return SOURCE_KINDS[siteId] || { label: '来源', tone: 'default' };
+}
+
+function siteRows() {
+  return Array.isArray(state.sourceStatus?.sites) ? state.sourceStatus.sites : [];
+}
+
+function siteRow(siteId) {
+  return siteRows().find(s => s.site_id === siteId) || null;
+}
+
+function setStats(payload) {
+  const cards = [
+    ['AI 信号', fmt(payload.total_items)],
+    ['站点数',  fmt(payload.site_count)],
+    ['来源分组', fmt(payload.source_count)],
+    ['归档',    fmt(payload.archive_total || 0)],
+  ];
+  statsEl.innerHTML = '';
+  cards.forEach(([k, v]) => {
+    const node = document.createElement('div');
+    node.className = 'stat';
+    node.innerHTML = `<div class="k">${k}</div><div class="v">${v}</div>`;
+    statsEl.appendChild(node);
+  });
+}
+
+function mkCoverageCard(label, value, meta, tone = '') {
+  const node = document.createElement('div');
+  node.className = `coverage-card ${tone}`.trim();
+  node.innerHTML = `<span class="coverage-label">${label}</span><strong>${value}</strong><span class="coverage-meta">${meta}</span>`;
+  return node;
+}
+
+function renderCoverageStrip() {
+  if (!coverageStripEl) return;
+  coverageStripEl.innerHTML = '';
+  const status = state.sourceStatus;
+  const rows = siteRows();
+  const failed = Array.isArray(status?.failed_sites) ? status.failed_sites : [];
+  const allCount = state.totalAllMode || state.itemsAll.length || 0;
+  const rawCount = status?.fetched_raw_items || state.totalRaw || allCount;
+  const officialCount = siteRow('official_ai')?.item_count || 0;
+  const newsletterCount = siteRow('aibreakfast')?.item_count || 0;
+  const buildersCount = siteRow('followbuilders')?.item_count || 0;
+  const okSites = status?.successful_sites || 0;
+  const totalSites = rows.length;
+
+  const cards = [
+    ['源健康',      totalSites ? `${fmt(okSites)}/${fmt(totalSites)}` : '加载中', failed.length ? `${fmt(failed.length)} 个失败源` : '内置源正常', failed.length ? 'warn' : 'ok'],
+    ['今日覆盖池',  `${fmt(rawCount)} 条`,       `全网抓取原始信号 · ${fmt(allCount)} 条入池`,       'signal'],
+    ['AI精选',      `${fmt(state.totalAi)} 条`,  '24小时强相关信号',                                  'signal'],
+    ['官方/日报源池',`${fmt(officialCount + newsletterCount)} 条`, '官方节点 + AI Breakfast',         'official'],
+    ['Builders/X源池',`${fmt(buildersCount)} 条`,'Follow Builders公开feed',                          'builders'],
+    ['私人扩展',    'OPML',                       '可用 Secret 接入私有源',                            'private'],
+  ];
+
+  cards.forEach(([label, value, meta, tone]) => {
+    coverageStripEl.appendChild(mkCoverageCard(label, value, meta, tone));
+  });
+}
+
+function renderAdvancedSummary() {
+  if (!advancedSummaryEl) return;
+  const status = state.sourceStatus;
+  const allCount = state.allDedup
+    ? (state.totalAllMode || state.itemsAll.length)
+    : (state.totalRaw || state.itemsAllRaw.length);
+  if (!status) { advancedSummaryEl.textContent = `全量 ${fmt(allCount)} 条`; return; }
+  const sites = Array.isArray(status.sites) ? status.sites : [];
+  advancedSummaryEl.textContent = `${fmt(status.successful_sites || 0)}/${fmt(sites.length)} 源可用 · 全量 ${fmt(allCount)} 条`;
+}
+
+function computeSiteStats(items) {
+  const m = new Map();
+  items.forEach(item => {
+    if (!m.has(item.site_id)) m.set(item.site_id, { site_id: item.site_id, site_name: item.site_name, count: 0, raw_count: 0 });
+    const r = m.get(item.site_id);
+    r.count++;
+    r.raw_count++;
+  });
+  return [...m.values()].sort((a, b) => b.count - a.count || a.site_name.localeCompare(b.site_name, 'zh-CN'));
+}
+
+function currentSiteStats() {
+  if (state.mode === 'ai') return state.statsAi || [];
+  return computeSiteStats(state.allDedup ? state.itemsAll : state.itemsAllRaw);
+}
+
+function renderSiteFilters() {
+  const stats = currentSiteStats();
+
+  siteSelectEl.innerHTML = '<option value="">全部站点</option>';
+  stats.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.site_id;
+    opt.textContent = `${s.site_name} (${s.count}/${s.raw_count ?? s.count})`;
+    siteSelectEl.appendChild(opt);
+  });
+  siteSelectEl.value = state.siteFilter;
+
+  sitePillsEl.innerHTML = '';
+  const allPill = document.createElement('button');
+  allPill.className = `pill ${state.siteFilter === '' ? 'active' : ''}`;
+  allPill.textContent = '全部';
+  allPill.onclick = () => { state.siteFilter = ''; renderSiteFilters(); renderList(); };
+  sitePillsEl.appendChild(allPill);
+
+  stats.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = `pill ${state.siteFilter === s.site_id ? 'active' : ''}`;
+    btn.textContent = `${s.site_name} ${s.count}/${s.raw_count ?? s.count}`;
+    btn.onclick = () => { state.siteFilter = s.site_id; renderSiteFilters(); renderList(); };
+    sitePillsEl.appendChild(btn);
+  });
+}
+
+function renderModeSwitch() {
+  modeAiBtnEl.classList.toggle('active', state.mode === 'ai');
+  modeAllBtnEl.classList.toggle('active', state.mode === 'all');
+  if (allDedupeWrapEl) allDedupeWrapEl.classList.toggle('show', state.mode === 'all');
+  if (allDedupeToggleEl) allDedupeToggleEl.checked = state.allDedup;
+  if (allDedupeLabelEl) allDedupeLabelEl.textContent = state.allDedup ? '去重开' : '去重关';
+  if (state.mode === 'ai') {
+    modeHintEl.textContent = `AI强相关 · ${fmt(state.totalAi)} 条`;
+    if (listTitleEl) listTitleEl.textContent = 'AI 信号流';
+  } else {
+    const cnt = state.allDedup ? (state.totalAllMode || state.itemsAll.length) : (state.totalRaw || state.itemsAllRaw.length);
+    modeHintEl.textContent = `全量 · ${state.allDedup ? '去重开' : '去重关'} · ${fmt(cnt)} 条`;
+    if (listTitleEl) listTitleEl.textContent = '全量更新';
+  }
+  renderAdvancedSummary();
+}
+
+function effectiveAllItems() {
+  return state.allDedup ? state.itemsAll : state.itemsAllRaw;
+}
+
+function modeItems() {
+  return state.mode === 'all' ? effectiveAllItems() : state.itemsAi;
+}
+
+function getFilteredItems() {
+  const q = state.query.trim().toLowerCase();
+  return modeItems().filter(item => {
+    if (state.siteFilter && item.site_id !== state.siteFilter) return false;
+    if (!q) return true;
+    const hay = `${item.title || ''} ${item.title_zh || ''} ${item.title_en || ''} ${item.site_name || ''} ${item.source || ''}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function renderItemNode(item) {
+  const node = itemTpl.content.firstElementChild.cloneNode(true);
+  node.querySelector('.site').textContent = item.site_name;
+  const kind = sourceKind(item.site_id);
+  const categoryEl = node.querySelector('.category');
+  categoryEl.textContent = kind.label;
+  categoryEl.classList.add(`kind-${kind.tone}`);
+  node.querySelector('.source').textContent = `分区: ${item.source}`;
+  node.querySelector('.time').textContent = fmtTime(item.published_at || item.first_seen_at);
+
+  const titleEl = node.querySelector('.title');
+  const zh = (item.title_zh || '').trim();
+  const en = (item.title_en || '').trim();
+  titleEl.textContent = '';
+  if (zh && en && zh !== en) {
+    const primary = document.createElement('span');
+    primary.textContent = zh;
+    const sub = document.createElement('span');
+    sub.className = 'title-sub';
+    sub.textContent = en;
+    titleEl.append(primary, sub);
+  } else {
+    titleEl.textContent = item.title || zh || en;
+  }
+  titleEl.href = item.url;
+  return node;
+}
+
+function buildSourceGroupNode(source, items) {
+  const section = document.createElement('section');
+  section.className = 'source-group';
+  const header = document.createElement('header');
+  header.className = 'source-group-head';
+  const title = document.createElement('h3');
+  title.textContent = source;
+  const count = document.createElement('span');
+  count.textContent = `${fmt(items.length)} 条`;
+  const listEl = document.createElement('div');
+  listEl.className = 'source-group-list';
+  header.append(title, count);
+  section.append(header, listEl);
+  items.forEach(item => listEl.appendChild(renderItemNode(item)));
+  return section;
+}
+
+function groupBySource(items) {
+  const m = new Map();
+  items.forEach(item => {
+    const key = item.source || '未分区';
+    if (!m.has(key)) m.set(key, []);
+    m.get(key).push(item);
+  });
+  return [...m.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'zh-CN'));
+}
+
+function renderGroupedBySource(items) {
+  const frag = document.createDocumentFragment();
+  groupBySource(items).forEach(([source, groupItems]) => frag.appendChild(buildSourceGroupNode(source, groupItems)));
+  newsListEl.appendChild(frag);
+}
+
+function renderGroupedBySiteAndSource(items) {
+  const siteMap = new Map();
+  items.forEach(item => {
+    if (!siteMap.has(item.site_id)) siteMap.set(item.site_id, { siteName: item.site_name || item.site_id, items: [] });
+    siteMap.get(item.site_id).items.push(item);
+  });
+
+  const sites = [...siteMap.entries()].sort((a, b) => {
+    const byCount = b[1].items.length - a[1].items.length;
+    if (byCount !== 0) return byCount;
+    return a[1].siteName.localeCompare(b[1].siteName, 'zh-CN');
+  });
+
+  const frag = document.createDocumentFragment();
+  sites.forEach(([, site]) => {
+    const siteSection = document.createElement('section');
+    siteSection.className = 'site-group';
+    const header = document.createElement('header');
+    header.className = 'site-group-head';
+    const title = document.createElement('h3');
+    title.textContent = site.siteName;
+    const count = document.createElement('span');
+    count.textContent = `${fmt(site.items.length)} 条`;
+    const siteListEl = document.createElement('div');
+    siteListEl.className = 'site-group-list';
+    header.append(title, count);
+    siteSection.append(header, siteListEl);
+    groupBySource(site.items).forEach(([source, groupItems]) => siteListEl.appendChild(buildSourceGroupNode(source, groupItems)));
+    frag.appendChild(siteSection);
+  });
+  newsListEl.appendChild(frag);
+}
+
+function renderList() {
+  const filtered = getFilteredItems();
+  resultCountEl.textContent = `${fmt(filtered.length)} 条`;
+  newsListEl.innerHTML = '';
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = '当前筛选条件下没有结果。';
+    newsListEl.appendChild(empty);
+    return;
+  }
+  if (state.siteFilter) {
+    renderGroupedBySource(filtered);
+  } else {
+    renderGroupedBySiteAndSource(filtered);
+  }
+}
+
+function waytoagiViews(wta) {
+  const updates7d = Array.isArray(wta?.updates_7d) ? wta.updates_7d : [];
+  const latestDate = wta?.latest_date || (updates7d.length ? updates7d[0].date : null);
+  const updatesToday = Array.isArray(wta?.updates_today) && wta.updates_today.length
+    ? wta.updates_today
+    : (latestDate ? updates7d.filter(u => u.date === latestDate) : []);
+  return { updates7d, updatesToday, latestDate };
+}
+
+function renderWaytoagi(wta) {
+  const { updates7d, updatesToday, latestDate } = waytoagiViews(wta);
+  waytoagiTodayBtnEl.classList.toggle('active', state.waytoagiMode === 'today');
+  waytoagi7dBtnEl.classList.toggle('active', state.waytoagiMode === '7d');
+  waytoagiUpdatedAtEl.textContent = `更新时间：${fmtTime(wta.generated_at)}`;
+
+  waytoagiMetaEl.innerHTML = '';
+  const parts = [
+    Object.assign(document.createElement('a'), { href: wta.root_url || '#', target:'_blank', rel:'noopener noreferrer', textContent:'主页面' }),
+    '·',
+    Object.assign(document.createElement('a'), { href: wta.history_url || '#', target:'_blank', rel:'noopener noreferrer', textContent:'历史更新页' }),
+    '·',
+    Object.assign(document.createElement('span'), { textContent: `最近更新日(${latestDate || '--'})：${fmt(wta.count_today || updatesToday.length)} 条` }),
+    '·',
+    Object.assign(document.createElement('span'), { textContent: `近 7 日：${fmt(wta.count_7d || updates7d.length)} 条` }),
+  ];
+  parts.forEach(p => {
+    if (typeof p === 'string') {
+      const sep = document.createElement('span');
+      sep.textContent = p;
+      waytoagiMetaEl.appendChild(sep);
+    } else {
+      waytoagiMetaEl.appendChild(p);
+    }
+  });
+
+  waytoagiListEl.innerHTML = '';
+  const updates = state.waytoagiMode === 'today' ? updatesToday : updates7d;
+  if (!updates.length) {
+    const div = document.createElement('div');
+    div.className = 'waytoagi-empty';
+    div.textContent = state.waytoagiMode === 'today' ? '最近更新日没有更新，可切换到近7日查看。' : '近 7 日没有更新';
+    waytoagiListEl.appendChild(div);
+    return;
+  }
+  updates.forEach(u => {
+    const row = document.createElement('a');
+    row.className = 'waytoagi-item';
+    row.href = u.url || '#';
+    row.target = '_blank';
+    row.rel = 'noopener noreferrer';
+    row.innerHTML = `<span class="d">${fmtDate(u.date)}</span><span class="t">${u.title}</span>`;
+    waytoagiListEl.appendChild(row);
+  });
+}
+
+function mkMetric(label, value, tone = '') {
+  const node = document.createElement('div');
+  node.className = `health-metric ${tone}`.trim();
+  node.innerHTML = `<span class="health-label">${label}</span><strong>${value}</strong>`;
+  return node;
+}
+
+function renderSourceHealth() {
+  if (!sourceHealthEl) return;
+  sourceHealthEl.innerHTML = '';
+  const status = state.sourceStatus;
+  if (!status) {
+    sourceHealthEl.innerHTML = '<div class="health-empty">源状态未生成</div>';
+    renderAdvancedSummary();
+    return;
+  }
+  const sites     = Array.isArray(status.sites)        ? status.sites        : [];
+  const failed    = Array.isArray(status.failed_sites)  ? status.failed_sites  : [];
+  const zero      = Array.isArray(status.zero_item_sites)? status.zero_item_sites: [];
+  const rss       = status.rss_opml || {};
+  const failedFeeds    = Array.isArray(rss.failed_feeds)   ? rss.failed_feeds   : [];
+  const skippedFeeds   = Array.isArray(rss.skipped_feeds)  ? rss.skipped_feeds  : [];
+  const replacedFeeds  = Array.isArray(rss.replaced_feeds) ? rss.replaced_feeds : [];
+
+  const grid = document.createElement('div');
+  grid.className = 'health-grid';
+  grid.append(
+    mkMetric('内置源', `${fmt(status.successful_sites || 0)}/${fmt(sites.length)}`, failed.length ? 'warn' : 'ok'),
+    mkMetric('RSS', rss.enabled ? `${fmt(rss.ok_feeds || 0)}/${fmt(rss.effective_feed_total || 0)}` : '未启用'),
+    mkMetric('失败源', fmt(failed.length + failedFeeds.length), failed.length || failedFeeds.length ? 'bad' : 'ok'),
+    mkMetric('替换/跳过', `${fmt(replacedFeeds.length)}/${fmt(skippedFeeds.length)}`),
+  );
+  sourceHealthEl.appendChild(grid);
+
+  const issues = document.createElement('div');
+  issues.className = 'health-issues';
+
+  function mkIssueList(title, items) {
+    const wrap = document.createElement('div');
+    wrap.className = 'health-issue';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'health-issue-title';
+    titleEl.textContent = title;
+    const list = document.createElement('ul');
+    items.slice(0, 6).forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = typeof item === 'string' ? item : JSON.stringify(item);
+      list.appendChild(li);
+    });
+    if (items.length > 6) {
+      const li = document.createElement('li');
+      li.textContent = `另有 ${fmt(items.length - 6)} 项`;
+      list.appendChild(li);
+    }
+    wrap.append(titleEl, list);
+    return wrap;
+  }
+
+  if (failed.length)      issues.appendChild(mkIssueList('失败站点', failed));
+  if (zero.length)        issues.appendChild(mkIssueList('零结果站点', zero));
+  if (failedFeeds.length) issues.appendChild(mkIssueList('失败 RSS', failedFeeds));
+
+  if (issues.childElementCount) {
+    sourceHealthEl.appendChild(issues);
+  } else {
+    const ok = document.createElement('div');
+    ok.className = 'health-ok';
+    ok.textContent = '源状态正常';
+    sourceHealthEl.appendChild(ok);
+  }
+  renderAdvancedSummary();
+}
 
 function init() {
-  document.getElementById('updateTime').textContent = fmtTime(NOW);
-  document.getElementById('totalCount').textContent = NEWS.length;
-  document.getElementById('aiCount').textContent = NEWS.filter(n => n.isAI).length;
+  const payload  = MOCK_NEWS;
+  const wta      = MOCK_WAYTOAGI;
+  const status   = MOCK_STATUS;
 
-  buildSourcePills();
-  buildSiteChips();
-  buildStatusList();
+  state.itemsAi       = payload.items_ai || [];
+  state.itemsAll      = payload.items_ai || [];
+  state.itemsAllRaw   = payload.items_ai || [];
+  state.statsAi       = payload.site_stats || [];
+  state.totalAi       = payload.total_items || state.itemsAi.length;
+  state.totalRaw      = payload.total_items || state.itemsAi.length;
+  state.totalAllMode  = payload.total_items || state.itemsAi.length;
+  state.generatedAt   = payload.generated_at;
+  state.waytoagiData  = wta;
+  state.sourceStatus  = status;
 
-  document.getElementById('searchInput').addEventListener('input', e => {
-    state.search = e.target.value.toLowerCase().trim();
-    render();
-  });
-
-  renderWTA();
-  render();
+  setStats(payload);
+  renderModeSwitch();
+  renderCoverageStrip();
+  renderSiteFilters();
+  renderList();
+  updatedAtEl.textContent = `更新时间：${fmtTime(state.generatedAt)}`;
+  renderSourceHealth();
+  renderWaytoagi(wta);
 }
 
-function buildSourcePills() {
-  const el = document.getElementById('sourcePills');
-  const sources = ['OpenAI Blog', 'Anthropic', 'Google DeepMind', 'Meta AI',
-                   'xAI', 'Mistral AI', 'Hugging Face', 'arXiv AI'];
-  sources.forEach(s => {
-    const p = document.createElement('span');
-    p.className = 'source-pill';
-    p.innerHTML = `<span class="pill-dot"></span>${s}`;
-    el.appendChild(p);
-  });
-  const more = document.createElement('span');
-  more.className = 'source-pill';
-  more.innerHTML = `<span class="pill-dot warn"></span>+18 更多`;
-  el.appendChild(more);
+/* ── Event listeners ───────────────────────────────────────────────────────── */
+
+searchInputEl.addEventListener('input', e => { state.query = e.target.value; renderList(); });
+
+siteSelectEl.addEventListener('change', e => { state.siteFilter = e.target.value; renderSiteFilters(); renderList(); });
+
+modeAiBtnEl.addEventListener('click', () => { state.mode = 'ai'; renderModeSwitch(); renderSiteFilters(); renderList(); });
+
+modeAllBtnEl.addEventListener('click', () => { state.mode = 'all'; renderModeSwitch(); renderSiteFilters(); renderList(); });
+
+if (allDedupeToggleEl) {
+  allDedupeToggleEl.addEventListener('change', e => { state.allDedup = Boolean(e.target.checked); renderModeSwitch(); renderSiteFilters(); renderList(); });
 }
 
-function buildSiteChips() {
-  const el = document.getElementById('siteChips');
-  const sources = [...new Set(NEWS.map(n => ({ label: n.source, key: n.sourceKey }))
-    .map(JSON.stringify))].map(JSON.parse)
-    .sort((a, b) => a.label.localeCompare(b.label));
+waytoagiTodayBtnEl.addEventListener('click', () => { state.waytoagiMode = 'today'; renderWaytoagi(state.waytoagiData); });
+waytoagi7dBtnEl.addEventListener('click', () => { state.waytoagiMode = '7d'; renderWaytoagi(state.waytoagiData); });
 
-  sources.forEach(({ label, key }) => {
-    const chip = document.createElement('span');
-    chip.className = 'chip';
-    chip.dataset.site = key;
-    chip.textContent = label;
-    chip.onclick = function () { filterSite(this); };
-    el.appendChild(chip);
-  });
-}
-
-function buildStatusList() {
-  const el = document.getElementById('statusList');
-  const labels = { good: '正常', warn: '慢速', bad: '异常' };
-  STATUS.forEach(s => {
-    const row = document.createElement('div');
-    row.className = 'status-row';
-    row.innerHTML = `
-      <span class="status-name">${s.name}</span>
-      <span class="status-right">
-        <span class="status-label ${s.status}">${labels[s.status]}</span>
-        <span class="status-dot ${s.status !== 'good' ? s.status : ''}"></span>
-      </span>`;
-    el.appendChild(row);
-  });
-}
-
-/* ── Render ─────────────────────────────────────────────────────────────────── */
-
-function render() {
-  let items = [...NEWS];
-
-  if (state.mode === 'ai') items = items.filter(n => n.isAI);
-  if (state.site !== 'all') items = items.filter(n => n.sourceKey === state.site);
-
-  if (state.dedup) {
-    const seen = new Set();
-    items = items.filter(n => {
-      const key = n.sourceKey + '|' + n.title.slice(0, 32).toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }
-
-  if (state.search) {
-    items = items.filter(n =>
-      n.title.toLowerCase().includes(state.search) ||
-      n.titleZh.includes(state.search) ||
-      n.source.toLowerCase().includes(state.search)
-    );
-  }
-
-  const feed = document.getElementById('newsFeed');
-  feed.innerHTML = '';
-
-  items.forEach(n => {
-    const div = document.createElement('div');
-    div.className = 'news-item';
-    div.innerHTML = `
-      <div class="news-meta">
-        <span class="source-badge">${n.source}</span>
-        ${n.isAI ? '<span class="ai-tag">AI</span>' : ''}
-        <span class="news-time">${timeAgo(new Date(n.time))}</span>
-      </div>
-      <div class="news-title"><a href="${n.url}" target="_blank" rel="noopener">${n.title}</a></div>
-      <div class="news-title-zh">${n.titleZh}</div>`;
-    feed.appendChild(div);
-  });
-
-  document.getElementById('feedCount').textContent = items.length;
-  document.getElementById('noResults').style.display = items.length === 0 ? 'block' : 'none';
-}
-
-function renderWTA() {
-  const el = document.getElementById('wtaList');
-  el.innerHTML = '';
-  WAYTOAGI[state.wta].forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'wta-item';
-    div.innerHTML = `<div class="wta-time">${item.time}</div><div class="wta-text">${item.text}</div>`;
-    el.appendChild(div);
-  });
-}
-
-/* ── Control handlers ───────────────────────────────────────────────────────── */
-
-function toggleAdv() {
-  const panel = document.getElementById('advPanel');
-  const btn = document.getElementById('advBtn');
-  const chevron = document.getElementById('advChevron');
-  const open = panel.classList.toggle('open');
-  btn.classList.toggle('active', open);
-  chevron.style.transform = open ? 'rotate(180deg)' : '';
-}
-
-function filterSite(el) {
-  document.querySelectorAll('#siteChips .chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  state.site = el.dataset.site;
-  render();
-}
-
-function setMode(mode) {
-  state.mode = mode;
-  document.getElementById('modeAI').classList.toggle('active', mode === 'ai');
-  document.getElementById('modeAll').classList.toggle('active', mode === 'all');
-  render();
-}
-
-function setDedup(on) {
-  state.dedup = on;
-  document.getElementById('dedupOn').classList.toggle('active', on);
-  document.getElementById('dedupOff').classList.toggle('active', !on);
-  render();
-}
-
-function setWTA(range) {
-  state.wta = range;
-  document.getElementById('wtaToday').classList.toggle('active', range === 'today');
-  document.getElementById('wtaWeek').classList.toggle('active', range === 'week');
-  renderWTA();
-}
-
-/* ── Helpers ─────────────────────────────────────────────────────────────────── */
-
-function fmtTime(d) {
-  const pad = n => String(n).padStart(2, '0');
-  return `${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-}
-
-function timeAgo(d) {
-  const diff = Math.floor((NOW - d) / 60000);
-  if (diff < 60) return `${diff}分钟前`;
-  const h = Math.floor(diff / 60);
-  if (h < 24) return `${h}小时前`;
-  return `${Math.floor(h / 24)}天前`;
-}
-
-/* ── Boot ─────────────────────────────────────────────────────────────────── */
 init();
-</script>
-</body>
+    </script>
+  </body>
 </html>
