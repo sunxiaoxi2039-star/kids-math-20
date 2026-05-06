@@ -3,14 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>人类进化时间轴</title>
+  <title>多Agent协作框架</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0e1a;
+      --bg2: #0f1526;
+      --surface: rgba(255,255,255,.04);
+      --border: rgba(255,255,255,.09);
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --master: #f59e0b;
+      --planner: #60a5fa;
+      --analyst: #34d399;
+      --writer: #f472b6;
+      --calc: #a78bfa;
+      --validator: #fb923c;
+    }
 
     body {
       font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      background: linear-gradient(135deg, #0d1117 0%, #1a1a2e 40%, #16213e 100%);
-      color: #e0e0e0;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
     }
@@ -18,629 +33,851 @@
     /* ── Header ── */
     header {
       text-align: center;
-      padding: 60px 20px 40px;
+      padding: 44px 20px 32px;
       position: relative;
+      border-bottom: 1px solid var(--border);
     }
     header::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, rgba(100,180,255,.15) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 50% -20%, rgba(96,165,250,.12) 0%, transparent 65%);
       pointer-events: none;
     }
     header h1 {
-      font-size: clamp(2rem, 5vw, 3.6rem);
+      font-size: clamp(1.8rem, 4vw, 3rem);
       font-weight: 800;
-      background: linear-gradient(90deg, #64b4ff, #a78bfa, #f472b6);
+      background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      letter-spacing: .04em;
+      letter-spacing: .03em;
     }
     header p {
-      margin-top: 14px;
-      font-size: 1.05rem;
-      color: #94a3b8;
-      max-width: 600px;
+      margin-top: 12px;
+      font-size: .95rem;
+      color: var(--muted);
+      max-width: 560px;
       margin-left: auto;
       margin-right: auto;
       line-height: 1.7;
     }
+    .badge-row {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      justify-content: center; margin-top: 18px;
+    }
+    .badge {
+      font-size: .72rem; font-weight: 700; letter-spacing: .09em;
+      padding: 4px 12px; border-radius: 999px;
+      border: 1px solid; text-transform: uppercase;
+    }
 
-    /* ── Filter bar ── */
-    .filter-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      padding: 0 20px 40px;
+    /* ── Main layout ── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+      max-width: 1300px;
+      margin: 24px auto;
+      padding: 0 20px;
     }
-    .filter-btn {
-      padding: 8px 20px;
-      border-radius: 999px;
-      border: 1.5px solid rgba(255,255,255,.15);
-      background: rgba(255,255,255,.05);
-      color: #cbd5e1;
+    @media (max-width: 960px) {
+      .main { grid-template-columns: 1fr; }
+    }
+
+    /* ── Canvas panel ── */
+    .canvas-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .canvas-panel h2 {
+      font-size: .8rem; font-weight: 700; letter-spacing: .1em;
+      color: var(--muted); text-transform: uppercase;
+      padding: 16px 20px 0;
+    }
+    #agentCanvas {
+      width: 100%;
+      display: block;
+    }
+
+    /* ── Right panel ── */
+    .right-panel { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── Card base ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: .78rem; font-weight: 700; letter-spacing: .1em;
+      color: var(--muted); text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title::before {
+      content: '';
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; opacity: .6;
+    }
+
+    /* ── Agent status list ── */
+    .agent-list { display: flex; flex-direction: column; gap: 10px; }
+    .agent-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color .3s, background .3s;
+    }
+    .agent-item.active { background: rgba(96,165,250,.08); }
+    .agent-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px currentColor;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+    .agent-item.working .agent-dot { animation: spin-pulse .8s linear infinite; }
+    @keyframes spin-pulse {
+      0%   { opacity: 1;  transform: scale(1); }
+      50%  { opacity: .6; transform: scale(1.4); }
+      100% { opacity: 1;  transform: scale(1); }
+    }
+    .agent-info { flex: 1; min-width: 0; }
+    .agent-name { font-size: .88rem; font-weight: 700; color: var(--text); }
+    .agent-role { font-size: .74rem; color: var(--muted); margin-top: 1px; }
+    .agent-status {
+      font-size: .7rem; font-weight: 700; letter-spacing: .06em;
+      padding: 3px 9px; border-radius: 999px;
+      border: 1px solid;
+      text-transform: uppercase;
+    }
+    .status-idle    { color: var(--muted);    border-color: var(--muted); }
+    .status-working { color: #60a5fa;          border-color: #60a5fa; }
+    .status-done    { color: #34d399;          border-color: #34d399; }
+    .status-waiting { color: #fbbf24;          border-color: #fbbf24; }
+
+    /* ── Task panel ── */
+    .task-examples {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .task-btn {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: .82rem;
       cursor: pointer;
-      font-size: .88rem;
-      letter-spacing: .03em;
-      transition: all .25s;
+      text-align: left;
+      transition: all .2s;
+      display: flex; align-items: center; gap: 10px;
     }
-    .filter-btn:hover, .filter-btn.active {
-      background: rgba(100,180,255,.2);
-      border-color: #64b4ff;
+    .task-btn:hover {
+      background: rgba(96,165,250,.1);
+      border-color: rgba(96,165,250,.4);
       color: #fff;
     }
-
-    /* ── Timeline container ── */
-    .timeline {
-      position: relative;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 20px 80px;
+    .task-btn.running { opacity: .5; cursor: not-allowed; pointer-events: none; }
+    .task-btn .t-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .task-btn .t-text { flex: 1; }
+    .task-btn .t-tag {
+      font-size: .65rem; font-weight: 700; letter-spacing: .07em;
+      padding: 2px 7px; border-radius: 999px;
+      background: rgba(255,255,255,.07); color: var(--muted);
+      text-transform: uppercase; flex-shrink: 0;
     }
-    /* Central vertical line */
-    .timeline::before {
-      content: '';
-      position: absolute;
-      left: 50%;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: linear-gradient(to bottom,
-        transparent,
-        #64b4ff 5%,
-        #a78bfa 50%,
-        #f472b6 95%,
-        transparent);
-      transform: translateX(-50%);
+    .custom-task-row {
+      display: flex; gap: 8px; margin-top: 4px;
     }
-
-    /* ── Each event card ── */
-    .event {
-      display: flex;
-      justify-content: flex-end;
-      padding-right: calc(50% + 40px);
-      margin-bottom: 50px;
-      position: relative;
-      opacity: 0;
-      transform: translateX(-40px);
-      transition: opacity .6s ease, transform .6s ease;
-    }
-    .event.right {
-      justify-content: flex-start;
-      padding-right: 0;
-      padding-left: calc(50% + 40px);
-      transform: translateX(40px);
-    }
-    .event.visible {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    .event.hidden-filter {
-      display: none;
-    }
-
-    /* Dot on the axis */
-    .event::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      top: 24px;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      border: 2.5px solid var(--dot-color, #64b4ff);
-      background: #0d1117;
-      transform: translateX(-50%);
-      box-shadow: 0 0 10px var(--dot-color, #64b4ff);
-      z-index: 2;
-    }
-
-    /* Connector line from card to dot */
-    .event-card::before {
-      content: '';
-      position: absolute;
-      top: 30px;
-      right: -40px;
-      width: 40px;
-      height: 2px;
-      background: var(--dot-color, #64b4ff);
-      opacity: .5;
-    }
-    .event.right .event-card::before {
-      right: auto;
-      left: -40px;
-    }
-
-    .event-card {
-      position: relative;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px;
-      padding: 22px 24px;
-      max-width: 400px;
-      width: 100%;
-      backdrop-filter: blur(10px);
-      transition: transform .25s, box-shadow .25s;
-      cursor: default;
-    }
-    .event-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 0 1px var(--dot-color, #64b4ff);
-    }
-
-    .event-era {
-      font-size: .72rem;
-      font-weight: 700;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      color: var(--dot-color, #64b4ff);
-      margin-bottom: 6px;
-    }
-    .event-time {
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: #f8fafc;
-      line-height: 1.1;
-      margin-bottom: 4px;
-    }
-    .event-name {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #e2e8f0;
-      margin-bottom: 10px;
-    }
-    .event-desc {
-      font-size: .88rem;
-      color: #94a3b8;
-      line-height: 1.7;
-    }
-    .event-icon {
-      font-size: 2.2rem;
-      margin-bottom: 10px;
-      display: block;
-    }
-
-    /* ── Section labels ── */
-    .section-label {
-      text-align: center;
-      margin-bottom: 40px;
-      position: relative;
-      z-index: 1;
-    }
-    .section-label span {
-      display: inline-block;
-      padding: 6px 24px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-      font-size: .85rem;
-      letter-spacing: .12em;
-      color: #cbd5e1;
-      text-transform: uppercase;
-    }
-
-    /* ── Homo sapiens highlight section ── */
-    .sapiens-section {
-      max-width: 1000px;
-      margin: 60px auto 0;
-      padding: 0 20px 80px;
-    }
-    .sapiens-section h2 {
-      text-align: center;
-      font-size: clamp(1.4rem, 3vw, 2rem);
-      font-weight: 800;
-      background: linear-gradient(90deg, #f472b6, #fb923c);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 10px;
-    }
-    .sapiens-section > p {
-      text-align: center;
-      color: #64748b;
-      font-size: .9rem;
-      margin-bottom: 40px;
-    }
-
-    /* Horizontal scroll strip for Sapiens stages */
-    .sapiens-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 18px;
-    }
-    .sapiens-card {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 14px;
-      padding: 20px 18px;
-      transition: transform .25s, box-shadow .25s;
-    }
-    .sapiens-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 30px rgba(244,114,182,.15);
-      border-color: rgba(244,114,182,.3);
-    }
-    .sapiens-card .s-time {
-      font-size: .78rem;
-      color: #f472b6;
-      font-weight: 700;
-      letter-spacing: .08em;
-      margin-bottom: 6px;
-    }
-    .sapiens-card .s-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #f8fafc;
-      margin-bottom: 8px;
-    }
-    .sapiens-card .s-icon {
-      font-size: 1.8rem;
-      margin-bottom: 8px;
-      display: block;
-    }
-    .sapiens-card .s-desc {
+    .custom-task-row input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 13px;
       font-size: .82rem;
-      color: #94a3b8;
-      line-height: 1.65;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s;
     }
+    .custom-task-row input:focus { border-color: rgba(96,165,250,.5); }
+    .custom-task-row input::placeholder { color: var(--muted); }
+    .run-btn {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border: none; border-radius: 10px;
+      color: #fff; font-size: .82rem; font-weight: 700;
+      padding: 9px 16px; cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      white-space: nowrap;
+    }
+    .run-btn:hover { opacity: .9; transform: translateY(-1px); }
+    .run-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    /* ── Message log ── */
+    .log-box {
+      max-height: 260px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 6px;
+      padding-right: 4px;
+    }
+    .log-box::-webkit-scrollbar { width: 4px; }
+    .log-box::-webkit-scrollbar-track { background: transparent; }
+    .log-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+    .log-msg {
+      display: flex; gap: 10px; align-items: flex-start;
+      font-size: .78rem; line-height: 1.55;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-radius: 9px;
+      border-left: 3px solid;
+      opacity: 0;
+      transform: translateY(6px);
+      animation: msg-in .35s forwards;
+    }
+    @keyframes msg-in {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .log-msg .m-icon { flex-shrink: 0; margin-top: 1px; }
+    .log-msg .m-from { font-weight: 700; flex-shrink: 0; }
+    .log-msg .m-text { color: #94a3b8; }
+    .log-empty { color: var(--muted); font-size: .8rem; text-align: center; padding: 16px 0; }
+
+    /* ── Stats bar ── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      max-width: 1300px; margin: 0 auto 28px; padding: 0 20px;
+    }
+    @media (max-width: 640px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.8rem; font-weight: 800;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label { font-size: .73rem; color: var(--muted); margin-top: 2px; letter-spacing: .05em; }
+
+    /* ── Architecture diagram section ── */
+    .arch-section {
+      max-width: 1300px; margin: 0 auto 40px; padding: 0 20px;
+    }
+    .arch-title {
+      font-size: .78rem; font-weight: 700; letter-spacing: .1em;
+      color: var(--muted); text-transform: uppercase;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 700px) { .arch-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 460px) { .arch-grid { grid-template-columns: 1fr; } }
+    .arch-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+    .arch-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    }
+    .arch-card .ac-icon { font-size: 1.9rem; margin-bottom: 10px; display: block; }
+    .arch-card .ac-name { font-size: .95rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .arch-card .ac-role { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+    .arch-card .ac-desc { font-size: .8rem; color: #94a3b8; line-height: 1.65; }
+    .arch-card .ac-caps { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .arch-card .cap-tag {
+      font-size: .65rem; padding: 2px 8px; border-radius: 999px;
+      background: rgba(255,255,255,.06); color: var(--muted);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    /* ── Flow diagram ── */
+    .flow-section {
+      max-width: 1300px; margin: 0 auto 40px; padding: 0 20px;
+    }
+    .flow-title {
+      font-size: .78rem; font-weight: 700; letter-spacing: .1em;
+      color: var(--muted); text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .flow-steps {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 24px; overflow: hidden;
+    }
+    .flow-step {
+      flex: 1; min-width: 120px;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 0 8px;
+    }
+    .flow-arrow {
+      color: var(--muted); font-size: 1.2rem;
+      flex-shrink: 0;
+      padding: 0 4px;
+    }
+    .fs-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 800; margin-bottom: 8px;
+      border: 2px solid;
+    }
+    .fs-name { font-size: .8rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .fs-desc { font-size: .7rem; color: var(--muted); line-height: 1.5; }
 
     /* ── Footer ── */
     footer {
-      text-align: center;
-      padding: 30px;
-      color: #334155;
-      font-size: .8rem;
-      border-top: 1px solid rgba(255,255,255,.05);
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 680px) {
-      .timeline::before { left: 20px; }
-      .event, .event.right {
-        padding-left: 60px;
-        padding-right: 0;
-        justify-content: flex-start;
-        transform: translateX(-20px);
-      }
-      .event::after { left: 20px; }
-      .event-card::before, .event.right .event-card::before {
-        left: -40px;
-        right: auto;
-        width: 40px;
-      }
-      .event-card { max-width: 100%; }
+      text-align: center; padding: 28px;
+      color: #1e293b; font-size: .78rem;
+      border-top: 1px solid var(--border);
     }
   </style>
 </head>
 <body>
 
+<!-- ── Header ── -->
 <header>
-  <h1>人类进化时间轴</h1>
-  <p>从最早的灵长类祖先到智人文明，跨越数百万年的生命演化旅程</p>
+  <h1>多Agent协作框架</h1>
+  <p>基于主控-子Agent架构的智能任务协作系统，支持任务分解、并行处理、结果聚合与验证</p>
+  <div class="badge-row">
+    <span class="badge" style="color:var(--master);border-color:var(--master)">主控调度</span>
+    <span class="badge" style="color:var(--planner);border-color:var(--planner)">任务规划</span>
+    <span class="badge" style="color:var(--analyst);border-color:var(--analyst)">数据分析</span>
+    <span class="badge" style="color:var(--writer);border-color:var(--writer)">内容生成</span>
+    <span class="badge" style="color:var(--calc);border-color:var(--calc)">逻辑推理</span>
+    <span class="badge" style="color:var(--validator);border-color:var(--validator)">结果验证</span>
+  </div>
 </header>
 
-<!-- Filter -->
-<div class="filter-bar">
-  <button class="filter-btn active" data-filter="all">全部</button>
-  <button class="filter-btn" data-filter="primate">灵长类起源</button>
-  <button class="filter-btn" data-filter="australo">南方古猿</button>
-  <button class="filter-btn" data-filter="homo">人属演化</button>
-  <button class="filter-btn" data-filter="sapiens">智人阶段</button>
+<!-- ── Stats ── -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-value" id="stat-tasks">0</div>
+    <div class="stat-label">已完成任务</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-msgs">0</div>
+    <div class="stat-label">Agent消息数</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-agents">6</div>
+    <div class="stat-label">在线Agent</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-time">0ms</div>
+    <div class="stat-label">平均响应时间</div>
+  </div>
 </div>
 
-<!-- Main timeline -->
-<div class="timeline" id="timeline">
-
-  <div class="section-label"><span>灵长类起源</span></div>
-
-  <!-- 1 -->
-  <div class="event" data-category="primate" style="--dot-color:#34d399">
-    <div class="event-card">
-      <span class="event-icon">🌿</span>
-      <div class="event-era">灵长类起源</div>
-      <div class="event-time">6500 万年前</div>
-      <div class="event-name">灵长类出现</div>
-      <div class="event-desc">恐龙灭绝后，早期灵长类动物（普尔加托里猴 Purgatorius）出现，具有灵活的手指和前向视野，为后续进化奠定基础。</div>
-    </div>
+<!-- ── Main content ── -->
+<div class="main">
+  <!-- Left: canvas -->
+  <div class="canvas-panel">
+    <h2>Agent 网络拓扑</h2>
+    <canvas id="agentCanvas"></canvas>
   </div>
 
-  <!-- 2 -->
-  <div class="event right" data-category="primate" style="--dot-color:#34d399">
-    <div class="event-card">
-      <span class="event-icon">🌳</span>
-      <div class="event-era">灵长类起源</div>
-      <div class="event-time">5500 万年前</div>
-      <div class="event-name">类人猿与猴子分化</div>
-      <div class="event-desc">灵长类分化为两大支系：旧世界猴（狭鼻猴下目）与类人猿祖先，逐渐形成更复杂的社会行为。</div>
-    </div>
-  </div>
+  <!-- Right panel -->
+  <div class="right-panel">
 
-  <!-- 3 -->
-  <div class="event" data-category="primate" style="--dot-color:#34d399">
-    <div class="event-card">
-      <span class="event-icon">🦍</span>
-      <div class="event-era">灵长类起源</div>
-      <div class="event-time">1800 万年前</div>
-      <div class="event-name">原康修尔猿（Proconsul）</div>
-      <div class="event-desc">非洲出现最早的类人猿之一，尾部退化，脑容量增大，是猩猩、黑猩猩与人类的共同祖先候选者。</div>
-    </div>
-  </div>
-
-  <!-- 4 -->
-  <div class="event right" data-category="primate" style="--dot-color:#34d399">
-    <div class="event-card">
-      <span class="event-icon">🧬</span>
-      <div class="event-era">灵长类起源</div>
-      <div class="event-time">700 万年前</div>
-      <div class="event-name">人猿分化（撒海尔人）</div>
-      <div class="event-desc">人类与黑猩猩的共同祖先谱系分离，乍得沙赫人（Sahelanthropus tchadensis）可能是最早的人族成员，已有直立迹象。</div>
-    </div>
-  </div>
-
-  <div class="section-label"><span>南方古猿时代</span></div>
-
-  <!-- 5 -->
-  <div class="event" data-category="australo" style="--dot-color:#fbbf24">
-    <div class="event-card">
-      <span class="event-icon">🦶</span>
-      <div class="event-era">南方古猿</div>
-      <div class="event-time">420 万年前</div>
-      <div class="event-name">南方古猿始祖种</div>
-      <div class="event-desc">Australopithecus anamensis，已能直立行走，但脑容量与黑猩猩相近（约 380 cc），生活在东非草原边缘。</div>
-    </div>
-  </div>
-
-  <!-- 6 -->
-  <div class="event right" data-category="australo" style="--dot-color:#fbbf24">
-    <div class="event-card">
-      <span class="event-icon">👣</span>
-      <div class="event-era">南方古猿</div>
-      <div class="event-time">390 万年前</div>
-      <div class="event-name">南方古猿阿法种（露西）</div>
-      <div class="event-desc">A. afarensis，双足行走能力成熟，1974年发现的"露西"骨架（约320万年前）成为最著名化石之一。坦桑尼亚莱托利留有足迹化石。</div>
-    </div>
-  </div>
-
-  <!-- 7 -->
-  <div class="event" data-category="australo" style="--dot-color:#fbbf24">
-    <div class="event-card">
-      <span class="event-icon">🪨</span>
-      <div class="event-era">南方古猿</div>
-      <div class="event-time">260 万年前</div>
-      <div class="event-name">最早石器出现</div>
-      <div class="event-desc">奥杜威文化（Oldowan）石器诞生，可能由南方古猿或早期人属使用，标志着技术演化的起点。</div>
-    </div>
-  </div>
-
-  <div class="section-label"><span>人属演化</span></div>
-
-  <!-- 8 -->
-  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">🧠</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">250 万年前</div>
-      <div class="event-name">能人（Homo habilis）</div>
-      <div class="event-desc">最早归入人属的物种，脑容量约 600 cc，能制造奥杜威石器，手部骨骼显示精细抓握能力。</div>
-    </div>
-  </div>
-
-  <!-- 9 -->
-  <div class="event" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">🔥</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">190 万年前</div>
-      <div class="event-name">直立人（Homo erectus）</div>
-      <div class="event-desc">脑容量达 900–1100 cc，体型接近现代人，首次走出非洲（格鲁吉亚德马尼西遗址），掌握阿舍利手斧技术，学会控制火。</div>
-    </div>
-  </div>
-
-  <!-- 10 -->
-  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">🌍</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">80 万年前</div>
-      <div class="event-name">海德堡人（Homo heidelbergensis）</div>
-      <div class="event-desc">非洲与欧洲均有分布，脑容量达 1200 cc，能协作狩猎大型动物，是尼安德特人和智人的共同祖先。</div>
-    </div>
-  </div>
-
-  <!-- 11 -->
-  <div class="event" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">❄️</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">40 万年前</div>
-      <div class="event-name">尼安德特人（Homo neanderthalensis）</div>
-      <div class="event-desc">适应欧洲冰期环境，脑容量甚至略超现代人（均值约 1520 cc），有埋葬死者的行为，与智人有过基因交流，约 4 万年前灭绝。</div>
-    </div>
-  </div>
-
-  <!-- 12 -->
-  <div class="event right" data-category="homo" style="--dot-color:#818cf8">
-    <div class="event-card">
-      <span class="event-icon">🧩</span>
-      <div class="event-era">人属演化</div>
-      <div class="event-time">30 万年前</div>
-      <div class="event-name">丹尼索瓦人（Denisovans）</div>
-      <div class="event-desc">仅凭西伯利亚洞穴指骨 DNA 确认的神秘古人类，与尼安德特人是"姐妹群"，其基因至今保留在东南亚及美拉尼西亚人群中。</div>
-    </div>
-  </div>
-
-  <div class="section-label"><span>智人崛起</span></div>
-
-  <!-- 13 -->
-  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🌅</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">30 万年前</div>
-      <div class="event-name">智人出现（Homo sapiens）</div>
-      <div class="event-desc">摩洛哥杰贝尔依罗（Jebel Irhoud）遗址发现最早智人化石，脑容量约 1350 cc，面部特征趋近现代人，已有中期石器技术。</div>
-    </div>
-  </div>
-
-  <!-- 14 -->
-  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🚶</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">7 万年前</div>
-      <div class="event-name">走出非洲（第二次迁徙）</div>
-      <div class="event-desc">智人沿南部海岸线向亚洲扩散，穿越阿拉伯半岛，随后进入南亚、东南亚及澳大利亚，引发与古人类的相遇与融合。</div>
-    </div>
-  </div>
-
-  <!-- 15 -->
-  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🎨</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">4 万年前</div>
-      <div class="event-name">行为现代性爆发</div>
-      <div class="event-desc">欧洲奥瑞纳文化（Aurignacian）兴起，出现洞穴壁画（肖维岩洞）、雕像、乐器（骨笛），象征性思维全面发展，标志认知革命完成。</div>
-    </div>
-  </div>
-
-  <!-- 16 -->
-  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🌏</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">1.5 万年前</div>
-      <div class="event-name">进入美洲</div>
-      <div class="event-desc">冰期海平面下降，智人经白令陆桥从东北亚进入北美，并迅速扩展至南美最南端，成为真正的全球物种。</div>
-    </div>
-  </div>
-
-  <!-- 17 -->
-  <div class="event" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🌾</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">1.2 万年前</div>
-      <div class="event-name">农业革命</div>
-      <div class="event-desc">近东新月沃地最早驯化小麦、大麦，中国独立驯化水稻与粟，从采猎到定居农耕的转变彻底改变了人类社会结构。</div>
-    </div>
-  </div>
-
-  <!-- 18 -->
-  <div class="event right" data-category="sapiens" style="--dot-color:#f472b6">
-    <div class="event-card">
-      <span class="event-icon">🏙️</span>
-      <div class="event-era">智人崛起</div>
-      <div class="event-time">5000 年前</div>
-      <div class="event-name">文明与文字诞生</div>
-      <div class="event-desc">苏美尔楔形文字（约前3200年）、埃及象形文字相继出现，城市国家、法律与宗教体系形成，人类进入历史时代。</div>
-    </div>
-  </div>
-
-</div><!-- /timeline -->
-
-<!-- ── Sapiens detailed section ── -->
-<div class="sapiens-section">
-  <h2>智人到现代人 — 全程详解</h2>
-  <p>从解剖学现代人到当今文明，跨越约 30 万年的关键节点</p>
-
-  <div class="sapiens-strip">
-
-    <div class="sapiens-card">
-      <span class="s-icon">🔬</span>
-      <div class="s-time">30 万年前</div>
-      <div class="s-title">解剖学现代人</div>
-      <div class="s-desc">骨骼特征已与今人相同：高圆脑壳、小眉弓、下巴突出。基因多样性最高的非洲人群保留了最古老的支系。</div>
+    <!-- Agent status -->
+    <div class="card">
+      <div class="card-title">Agent 状态</div>
+      <div class="agent-list" id="agentList"></div>
     </div>
 
-    <div class="sapiens-card">
-      <span class="s-icon">💡</span>
-      <div class="s-time">16 万年前</div>
-      <div class="s-title">赭石与贝壳装饰</div>
-      <div class="s-desc">南非布隆博斯洞穴发现赭石雕刻与穿孔贝壳，证明早期智人已有抽象思维与自我装饰意识。</div>
+    <!-- Tasks -->
+    <div class="card">
+      <div class="card-title">任务中心</div>
+      <div class="task-examples" id="taskExamples"></div>
+      <div class="custom-task-row" style="margin-top:12px">
+        <input type="text" id="customTask" placeholder="输入自定义任务…" maxlength="80" />
+        <button class="run-btn" id="runCustom">运行</button>
+      </div>
     </div>
 
-    <div class="sapiens-card">
-      <span class="s-icon">🤝</span>
-      <div class="s-time">7 万年前</div>
-      <div class="s-title">与古人类融合</div>
-      <div class="s-desc">现代非非洲人基因组含约 1–4% 尼安德特人 DNA，东南亚及大洋洲人群还含约 5% 丹尼索瓦人 DNA，进化从未是单一线性。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">🐻</span>
-      <div class="s-time">4 万年前</div>
-      <div class="s-title">狮人雕像</div>
-      <div class="s-desc">德国洞穴发现猛犸象牙雕刻的半人半狮像，是最早的神话/宗教艺术证据，显示抽象概念与虚构叙事能力。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">🐕</span>
-      <div class="s-time">1.5 万年前</div>
-      <div class="s-title">驯化狗</div>
-      <div class="s-desc">狼被驯化为犬，是人类最早的动物伙伴，辅助狩猎与看守，是系统性动物驯化的开端。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">✍️</span>
-      <div class="s-time">5200 年前</div>
-      <div class="s-title">文字发明</div>
-      <div class="s-desc">苏美尔楔形文字最初用于记账，后发展为记录神话、法律与诗歌，使知识可跨代累积，极大加速文化演化速度。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">⚙️</span>
-      <div class="s-time">250 年前</div>
-      <div class="s-title">工业革命</div>
-      <div class="s-desc">蒸汽机、机械化生产将人类从体力劳动中解放，城市化、科学革命与全球化加速，人口从 10 亿增长至今日逾 80 亿。</div>
-    </div>
-
-    <div class="sapiens-card">
-      <span class="s-icon">🚀</span>
-      <div class="s-time">现代</div>
-      <div class="s-title">技术奇点前夜</div>
-      <div class="s-desc">基因编辑（CRISPR）、人工智能、太空探索……智人正以前所未有的速度重塑自身与地球，生物进化与文化进化深度交织。</div>
+    <!-- Log -->
+    <div class="card">
+      <div class="card-title">消息日志</div>
+      <div class="log-box" id="logBox">
+        <div class="log-empty">等待任务启动…</div>
+      </div>
     </div>
 
   </div>
 </div>
 
-<footer>
-  数据参考：史密森尼人类起源项目 · Nature / Science 相关研究 · 《人类简史》（Harari）&nbsp;|&nbsp; 制作于 2026
-</footer>
+<!-- ── Architecture ── -->
+<div class="arch-section">
+  <div class="arch-title">Agent 能力矩阵</div>
+  <div class="arch-grid" id="archGrid"></div>
+</div>
+
+<!-- ── Flow ── -->
+<div class="flow-section">
+  <div class="flow-title">任务处理流水线</div>
+  <div class="flow-steps" id="flowSteps"></div>
+</div>
+
+<footer>多Agent协作框架 Demo &nbsp;|&nbsp; 基于主控调度 + 专能子Agent架构 &nbsp;|&nbsp; 2026</footer>
 
 <script>
-  /* ── Intersection Observer for scroll animations ── */
-  const events = document.querySelectorAll('.event');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-      }
-    });
-  }, { threshold: 0.15 });
-  events.forEach(el => observer.observe(el));
+/* ═══════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════ */
+const AGENTS = [
+  {
+    id: 'master',
+    name: '主控 Agent',
+    role: '任务调度 & 协调',
+    icon: '🎯',
+    color: '#f59e0b',
+    desc: '接收用户请求，分解复杂任务，将子任务分配给专能Agent，聚合最终结果并返回给用户。',
+    caps: ['任务分解', '负载均衡', '结果聚合', '异常处理'],
+  },
+  {
+    id: 'planner',
+    name: '规划 Agent',
+    role: '策略设计 & 路径规划',
+    icon: '📐',
+    color: '#60a5fa',
+    desc: '接收目标任务，制定详细执行计划，确定子任务依赖关系，生成最优执行路径。',
+    caps: ['目标分析', '依赖图构建', '优先级排序', '资源估算'],
+  },
+  {
+    id: 'analyst',
+    name: '分析 Agent',
+    role: '数据处理 & 洞察提取',
+    icon: '📊',
+    color: '#34d399',
+    desc: '处理结构化与非结构化数据，执行统计分析、模式识别与趋势预测，输出洞察报告。',
+    caps: ['数据清洗', '统计分析', '图表生成', '模式识别'],
+  },
+  {
+    id: 'writer',
+    name: '写作 Agent',
+    role: '内容生成 & 文本优化',
+    icon: '✍️',
+    color: '#f472b6',
+    desc: '根据结构化信息生成自然语言内容，支持多风格、多语言的文本创作与格式化输出。',
+    caps: ['文案生成', '摘要提取', '多语言翻译', '格式排版'],
+  },
+  {
+    id: 'calc',
+    name: '推理 Agent',
+    role: '逻辑推断 & 数值计算',
+    icon: '🧮',
+    color: '#a78bfa',
+    desc: '执行复杂的数学运算、逻辑推理和因果分析，为其他Agent提供精确的数值支持。',
+    caps: ['数学计算', '逻辑推理', '因果分析', '概率估算'],
+  },
+  {
+    id: 'validator',
+    name: '验证 Agent',
+    role: '质量检查 & 一致性验证',
+    icon: '✅',
+    color: '#fb923c',
+    desc: '对其他Agent输出进行事实核查、逻辑一致性验证和格式合规检查，确保最终质量。',
+    caps: ['事实核查', '逻辑验证', '格式审查', '安全过滤'],
+  },
+];
 
-  /* ── Filter buttons ── */
-  const filterBtns = document.querySelectorAll('.filter-btn');
-  filterBtns.forEach(btn => {
+const TASKS = [
+  { icon: '📝', text: '撰写一份AI发展趋势报告', tag: '写作', agents: ['master','planner','analyst','writer','validator'] },
+  { icon: '📊', text: '分析最近一年的用户数据', tag: '分析', agents: ['master','planner','analyst','calc','validator'] },
+  { icon: '🧮', text: '求解复杂数学优化问题', tag: '推理', agents: ['master','planner','calc','validator'] },
+  { icon: '🌐', text: '将技术文档翻译成多语言', tag: '翻译', agents: ['master','planner','writer','validator'] },
+  { icon: '🔍', text: '研究竞品并生成对比分析', tag: '研究', agents: ['master','planner','analyst','writer','validator'] },
+];
+
+const FLOW_STEPS = [
+  { num: '01', name: '任务接入', desc: '用户提交任务请求', color: '#f59e0b' },
+  { num: '02', name: '意图理解', desc: '主控Agent解析意图', color: '#60a5fa' },
+  { num: '03', name: '任务规划', desc: '分解为可执行子任务', color: '#34d399' },
+  { num: '04', name: '并行执行', desc: '专能Agent并行处理', color: '#a78bfa' },
+  { num: '05', name: '结果聚合', desc: '主控合并各Agent输出', color: '#f472b6' },
+  { num: '06', name: '验证发布', desc: '验证Agent质检后输出', color: '#fb923c' },
+];
+
+const MSG_TEMPLATES = {
+  master:    ['任务已接收，开始调度子Agent…', '正在分解复杂任务为{n}个子任务', '聚合所有子Agent结果', '任务执行完毕，结果已返回用户'],
+  planner:   ['分析任务目标与约束条件', '构建执行依赖图，共{n}个节点', '规划最优执行路径，预计{t}步', '执行计划已交付主控Agent'],
+  analyst:   ['加载数据源，共{n}条记录', '执行统计分析，识别关键指标', '检测到{n}个显著模式', '分析报告已生成'],
+  writer:    ['理解结构化输入，准备生成内容', '生成初稿，共{n}字', '优化语言风格与表达', '文档已格式化并交付'],
+  calc:      ['解析数学表达式与变量', '执行{n}次迭代计算', '验证数值精度与边界', '推理结果置信度 {p}%'],
+  validator: ['接收待验证内容', '执行{n}项事实核查', '逻辑一致性检验通过', '质量评分：{p}/100，内容合规'],
+};
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let state = {
+  agentStatus: Object.fromEntries(AGENTS.map(a => [a.id, 'idle'])),
+  running: false,
+  totalTasks: 0,
+  totalMsgs: 0,
+  avgTime: 0,
+  times: [],
+};
+
+/* ═══════════════════════════════════════════
+   RENDER STATIC UI
+═══════════════════════════════════════════ */
+function renderAgentList() {
+  const list = document.getElementById('agentList');
+  list.innerHTML = AGENTS.map(a => `
+    <div class="agent-item" id="ai-${a.id}">
+      <div class="agent-dot" style="color:${a.color};background:${a.color}"></div>
+      <div class="agent-info">
+        <div class="agent-name">${a.icon} ${a.name}</div>
+        <div class="agent-role">${a.role}</div>
+      </div>
+      <span class="agent-status status-idle" id="as-${a.id}">待机</span>
+    </div>
+  `).join('');
+}
+
+function renderTasks() {
+  const box = document.getElementById('taskExamples');
+  box.innerHTML = TASKS.map((t, i) => `
+    <button class="task-btn" data-idx="${i}">
+      <span class="t-icon">${t.icon}</span>
+      <span class="t-text">${t.text}</span>
+      <span class="t-tag">${t.tag}</span>
+    </button>
+  `).join('');
+  box.querySelectorAll('.task-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const filter = btn.dataset.filter;
-      events.forEach(ev => {
-        const match = filter === 'all' || ev.dataset.category === filter;
-        ev.classList.toggle('hidden-filter', !match);
-        if (match) {
-          // Re-trigger animation
-          ev.classList.remove('visible');
-          setTimeout(() => observer.observe(ev), 10);
-        }
-      });
+      if (state.running) return;
+      const t = TASKS[+btn.dataset.idx];
+      runTask(t.text, t.agents);
     });
   });
+}
+
+function renderArch() {
+  const grid = document.getElementById('archGrid');
+  grid.innerHTML = AGENTS.map(a => `
+    <div class="arch-card" style="border-color:${a.color}22">
+      <span class="ac-icon">${a.icon}</span>
+      <div class="ac-name">${a.name}</div>
+      <div class="ac-role" style="color:${a.color}">${a.role}</div>
+      <div class="ac-desc">${a.desc}</div>
+      <div class="ac-caps">${a.caps.map(c => `<span class="cap-tag">${c}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function renderFlow() {
+  const box = document.getElementById('flowSteps');
+  box.innerHTML = FLOW_STEPS.map((s, i) => `
+    ${i > 0 ? '<div class="flow-arrow">›</div>' : ''}
+    <div class="flow-step">
+      <div class="fs-num" style="color:${s.color};border-color:${s.color}">${s.num}</div>
+      <div class="fs-name">${s.name}</div>
+      <div class="fs-desc">${s.desc}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════
+   CANVAS
+═══════════════════════════════════════════ */
+const canvas = document.getElementById('agentCanvas');
+const ctx = canvas.getContext('2d');
+
+let particles = []; // { x, y, tx, ty, progress, color, agentId }
+
+function layoutAgents(W, H) {
+  const cx = W / 2, cy = H / 2;
+  const r = Math.min(W, H) * 0.33;
+  return AGENTS.map((a, i) => {
+    if (i === 0) return { ...a, x: cx, y: cy }; // master at center
+    const angle = ((i - 1) / (AGENTS.length - 1)) * Math.PI * 2 - Math.PI / 2;
+    return { ...a, x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
+  });
+}
+
+let agentPositions = [];
+
+function resizeCanvas() {
+  const panel = canvas.parentElement;
+  const W = panel.clientWidth;
+  const H = Math.max(W * 0.65, 320);
+  canvas.width = W;
+  canvas.height = H;
+  agentPositions = layoutAgents(W, H);
+  drawFrame();
+}
+
+function drawFrame() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw edges
+  const master = agentPositions[0];
+  for (let i = 1; i < agentPositions.length; i++) {
+    const a = agentPositions[i];
+    const active = state.agentStatus[a.id] !== 'idle';
+    ctx.beginPath();
+    ctx.moveTo(master.x, master.y);
+    ctx.lineTo(a.x, a.y);
+    ctx.strokeStyle = active ? a.color + '60' : 'rgba(255,255,255,.06)';
+    ctx.lineWidth = active ? 1.5 : 1;
+    ctx.setLineDash(active ? [] : [4, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw particles
+  particles = particles.filter(p => p.progress <= 1);
+  particles.forEach(p => {
+    p.progress += 0.025;
+    const x = p.x + (p.tx - p.x) * p.progress;
+    const y = p.y + (p.ty - p.y) * p.progress;
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = p.color;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  // Draw nodes
+  agentPositions.forEach(a => {
+    const st = state.agentStatus[a.id] || 'idle';
+    const isMaster = a.id === 'master';
+    const r = isMaster ? 32 : 24;
+
+    // Glow for active
+    if (st !== 'idle') {
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, r + 10, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(a.x, a.y, r, a.x, a.y, r + 14);
+      grad.addColorStop(0, a.color + '40');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f1526';
+    ctx.fill();
+    ctx.strokeStyle = st !== 'idle' ? a.color : a.color + '55';
+    ctx.lineWidth = isMaster ? 2.5 : 1.8;
+    ctx.stroke();
+
+    // Icon
+    ctx.font = `${isMaster ? 18 : 14}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(a.icon, a.x, a.y);
+
+    // Label
+    ctx.font = `bold ${isMaster ? 10 : 9}px "Segoe UI", sans-serif`;
+    ctx.fillStyle = a.color;
+    ctx.fillText(a.name.replace(' Agent', ''), a.x, a.y + r + 13);
+  });
+
+  requestAnimationFrame(drawFrame);
+}
+
+function spawnParticle(fromId, toId) {
+  const from = agentPositions.find(a => a.id === fromId);
+  const to   = agentPositions.find(a => a.id === toId);
+  if (!from || !to) return;
+  const agent = AGENTS.find(a => a.id === toId) || AGENTS[0];
+  particles.push({ x: from.x, y: from.y, tx: to.x, ty: to.y, progress: 0, color: agent.color });
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+/* ═══════════════════════════════════════════
+   TASK RUNNER
+═══════════════════════════════════════════ */
+let logClear = false;
+
+function log(agentId, text) {
+  const box = document.getElementById('logBox');
+  if (!logClear) { box.innerHTML = ''; logClear = true; }
+  const agent = AGENTS.find(a => a.id === agentId);
+  const msg = document.createElement('div');
+  msg.className = 'log-msg';
+  msg.style.borderColor = agent.color;
+  msg.innerHTML = `
+    <span class="m-icon">${agent.icon}</span>
+    <span class="m-from" style="color:${agent.color}">${agent.name.replace(' Agent','')}</span>
+    <span class="m-text">${text}</span>
+  `;
+  box.appendChild(msg);
+  box.scrollTop = box.scrollHeight;
+  state.totalMsgs++;
+  document.getElementById('stat-msgs').textContent = state.totalMsgs;
+}
+
+function setStatus(agentId, status) {
+  state.agentStatus[agentId] = status;
+  const el = document.getElementById('ai-' + agentId);
+  const sp = document.getElementById('as-' + agentId);
+  if (!el || !sp) return;
+  el.className = 'agent-item' + (status !== 'idle' ? ' active' : '') + (status === 'working' ? ' working' : '');
+  const MAP = { idle: ['待机','status-idle'], working: ['工作中','status-working'], done: ['完成','status-done'], waiting: ['等待','status-waiting'] };
+  const [label, cls] = MAP[status] || MAP.idle;
+  sp.className = 'agent-status ' + cls;
+  sp.textContent = label;
+}
+
+function randMsg(agentId) {
+  const tmpl = MSG_TEMPLATES[agentId] || [];
+  const t = tmpl[Math.floor(Math.random() * tmpl.length)] || '处理中…';
+  return t
+    .replace('{n}', Math.floor(Math.random() * 8) + 3)
+    .replace('{t}', Math.floor(Math.random() * 5) + 2)
+    .replace('{p}', Math.floor(Math.random() * 20) + 80);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runTask(taskText, agentIds) {
+  if (state.running) return;
+  state.running = true;
+  logClear = false;
+  const start = Date.now();
+
+  // Disable buttons
+  document.querySelectorAll('.task-btn').forEach(b => b.classList.add('running'));
+  document.getElementById('runCustom').disabled = true;
+
+  // Reset all
+  AGENTS.forEach(a => setStatus(a.id, 'idle'));
+  log('master', `收到任务：「${taskText}」`);
+  await delay(400);
+
+  // Master working
+  setStatus('master', 'working');
+  spawnParticle('master', 'master');
+  log('master', randMsg('master'));
+  await delay(600);
+
+  // Planner first
+  const usePlanner = agentIds.includes('planner');
+  if (usePlanner) {
+    setStatus('planner', 'waiting');
+    await delay(300);
+    spawnParticle('master', 'planner');
+    await delay(400);
+    setStatus('planner', 'working');
+    log('planner', randMsg('planner'));
+    await delay(500);
+    log('planner', randMsg('planner'));
+    await delay(500);
+    setStatus('planner', 'done');
+    spawnParticle('planner', 'master');
+    await delay(400);
+  }
+
+  // Middle agents in parallel-ish
+  const midAgents = agentIds.filter(id => id !== 'master' && id !== 'planner' && id !== 'validator');
+  for (const id of midAgents) {
+    setStatus(id, 'waiting');
+    spawnParticle('master', id);
+    await delay(180);
+  }
+  await delay(300);
+  for (const id of midAgents) {
+    setStatus(id, 'working');
+    log(id, randMsg(id));
+  }
+  await delay(700);
+  for (const id of midAgents) {
+    log(id, randMsg(id));
+  }
+  await delay(800);
+  for (const id of midAgents) {
+    setStatus(id, 'done');
+    spawnParticle(id, 'master');
+  }
+  await delay(500);
+
+  // Master aggregates
+  log('master', randMsg('master'));
+  await delay(500);
+
+  // Validator
+  if (agentIds.includes('validator')) {
+    setStatus('validator', 'waiting');
+    spawnParticle('master', 'validator');
+    await delay(500);
+    setStatus('validator', 'working');
+    log('validator', randMsg('validator'));
+    await delay(500);
+    log('validator', randMsg('validator'));
+    await delay(500);
+    setStatus('validator', 'done');
+    spawnParticle('validator', 'master');
+    await delay(400);
+  }
+
+  // Done
+  log('master', '✅ 任务执行完毕，结果已返回用户');
+  setStatus('master', 'done');
+
+  const elapsed = Date.now() - start;
+  state.times.push(elapsed);
+  state.avgTime = Math.round(state.times.reduce((a, b) => a + b, 0) / state.times.length);
+  document.getElementById('stat-time').textContent = state.avgTime + 'ms';
+  state.totalTasks++;
+  document.getElementById('stat-tasks').textContent = state.totalTasks;
+
+  await delay(2000);
+  AGENTS.forEach(a => setStatus(a.id, 'idle'));
+  state.running = false;
+  document.querySelectorAll('.task-btn').forEach(b => b.classList.remove('running'));
+  document.getElementById('runCustom').disabled = false;
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+renderAgentList();
+renderTasks();
+renderArch();
+renderFlow();
+resizeCanvas();
+
+document.getElementById('runCustom').addEventListener('click', () => {
+  const val = document.getElementById('customTask').value.trim();
+  if (!val || state.running) return;
+  const agentIds = AGENTS.map(a => a.id); // use all agents
+  runTask(val, agentIds);
+});
+document.getElementById('customTask').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('runCustom').click();
+});
 </script>
 </body>
 </html>
