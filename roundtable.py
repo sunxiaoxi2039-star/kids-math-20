@@ -9,7 +9,7 @@
 - 最终：排名榜 + 综合总结
 """
 
-import anthropic
+from openai import OpenAI
 import json
 import time
 import sys
@@ -151,7 +151,10 @@ class RoundtableSession:
     def __init__(self, topic: str, rounds: int = 3):
         self.topic = topic
         self.rounds = rounds
-        self.client = anthropic.Anthropic()
+        self.client = OpenAI(
+            api_key=os.environ.get("DEEPSEEK_API_KEY", ""),
+            base_url="https://api.deepseek.com",
+        )
         self.thinkers = {t["id"]: ThinkerState(config=t) for t in THINKERS}
         self.log: list[dict] = []  # 完整对话记录
 
@@ -181,18 +184,20 @@ class RoundtableSession:
         prompt = self._build_context(thinker_id)
         full_text = ""
 
-        with self.client.messages.stream(
-            model="claude-opus-4-7",
+        stream = self.client.chat.completions.create(
+            model="DeepSeek-V4-Pro",
             max_tokens=700,
-            system=thinker["system"],
-            messages=[{"role": "user", "content": prompt}],
-            thinking={"type": "adaptive"},
-        ) as stream:
-            for text in stream.text_stream:
-                # 缩进显示，增加可读性
-                text_display = text.replace("\n", "\n  ")
-                print(text_display, end="", flush=True)
-                full_text += text
+            messages=[
+                {"role": "system", "content": thinker["system"]},
+                {"role": "user", "content": prompt},
+            ],
+            stream=True,
+        )
+        for chunk in stream:
+            text = chunk.choices[0].delta.content or ""
+            text_display = text.replace("\n", "\n  ")
+            print(text_display, end="", flush=True)
+            full_text += text
 
         print("\n")
         return full_text
@@ -234,13 +239,15 @@ class RoundtableSession:
 只返回JSON，不要任何前缀或后缀。"""
 
             try:
-                resp = self.client.messages.create(
-                    model="claude-opus-4-7",
+                resp = self.client.chat.completions.create(
+                    model="DeepSeek-V4-Pro",
                     max_tokens=600,
-                    system=scorer.config["system"],
-                    messages=[{"role": "user", "content": score_prompt}],
+                    messages=[
+                        {"role": "system", "content": scorer.config["system"]},
+                        {"role": "user", "content": score_prompt},
+                    ],
                 )
-                raw = resp.content[0].text.strip()
+                raw = resp.choices[0].message.content.strip()
                 # 提取JSON
                 start = raw.find("{")
                 end = raw.rfind("}") + 1
@@ -350,14 +357,16 @@ class RoundtableSession:
 不要评价谁对谁错，而是提炼集体智慧的结晶。"""
 
         print("  ", end="", flush=True)
-        with self.client.messages.stream(
-            model="claude-opus-4-7",
+        stream = self.client.chat.completions.create(
+            model="DeepSeek-V4-Pro",
             max_tokens=600,
             messages=[{"role": "user", "content": synthesis_prompt}],
-        ) as stream:
-            for text in stream.text_stream:
-                text_display = text.replace("\n", "\n  ")
-                print(text_display, end="", flush=True)
+            stream=True,
+        )
+        for chunk in stream:
+            text = chunk.choices[0].delta.content or ""
+            text_display = text.replace("\n", "\n  ")
+            print(text_display, end="", flush=True)
 
         print("\n")
         hr("═")
@@ -400,9 +409,9 @@ def main():
     print("═" * 64 + "\n")
 
     # 检查 API key
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("  ❌ 请先设置 ANTHROPIC_API_KEY 环境变量：")
-        print("     export ANTHROPIC_API_KEY=sk-ant-...")
+    if not os.environ.get("DEEPSEEK_API_KEY"):
+        print("  ❌ 请先设置 DEEPSEEK_API_KEY 环境变量：")
+        print("     export DEEPSEEK_API_KEY=sk-...")
         sys.exit(1)
 
     topic = input("  请输入对谈话题（回车使用示例）：").strip()
