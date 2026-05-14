@@ -152,8 +152,8 @@ class RoundtableSession:
         self.topic = topic
         self.rounds = rounds
         self.client = OpenAI(
-            api_key=os.environ.get("DEEPSEEK_API_KEY", ""),
-            base_url="https://api.deepseek.com",
+            api_key="ollama",
+            base_url="http://localhost:11434/v1",
         )
         self.thinkers = {t["id"]: ThinkerState(config=t) for t in THINKERS}
         self.log: list[dict] = []  # 完整对话记录
@@ -185,7 +185,7 @@ class RoundtableSession:
         full_text = ""
 
         stream = self.client.chat.completions.create(
-            model="DeepSeek-V4-Pro",
+            model="gemma3:2b",
             max_tokens=700,
             messages=[
                 {"role": "system", "content": thinker["system"]},
@@ -240,7 +240,7 @@ class RoundtableSession:
 
             try:
                 resp = self.client.chat.completions.create(
-                    model="DeepSeek-V4-Pro",
+                    model="gemma3:2b",
                     max_tokens=600,
                     messages=[
                         {"role": "system", "content": scorer.config["system"]},
@@ -358,7 +358,7 @@ class RoundtableSession:
 
         print("  ", end="", flush=True)
         stream = self.client.chat.completions.create(
-            model="DeepSeek-V4-Pro",
+            model="gemma3:2b",
             max_tokens=600,
             messages=[{"role": "user", "content": synthesis_prompt}],
             stream=True,
@@ -408,10 +408,12 @@ def main():
     print("  五位思想家，围绕你的话题，深度碰撞，互相打分")
     print("═" * 64 + "\n")
 
-    # 检查 API key
-    if not os.environ.get("DEEPSEEK_API_KEY"):
-        print("  ❌ 请先设置 DEEPSEEK_API_KEY 环境变量：")
-        print("     export DEEPSEEK_API_KEY=sk-...")
+    # 检查 Ollama 是否在运行
+    import urllib.request
+    try:
+        urllib.request.urlopen("http://localhost:11434", timeout=2)
+    except Exception:
+        print("  ❌ Ollama 未运行，请先启动：ollama serve")
         sys.exit(1)
 
     topic = input("  请输入对谈话题（回车使用示例）：").strip()
