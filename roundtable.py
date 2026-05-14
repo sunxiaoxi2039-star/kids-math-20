@@ -9,6 +9,7 @@
 - 最终：排名榜 + 综合总结
 """
 
+import anthropic
 from openai import OpenAI
 import json
 import time
@@ -151,10 +152,7 @@ class RoundtableSession:
     def __init__(self, topic: str, rounds: int = 3):
         self.topic = topic
         self.rounds = rounds
-        self.client = OpenAI(
-            api_key="ollama",
-            base_url="http://localhost:11434/v1",
-        )
+        self.client = anthropic.Anthropic()
         self.thinkers = {t["id"]: ThinkerState(config=t) for t in THINKERS}
         self.log: list[dict] = []  # 完整对话记录
 
@@ -184,20 +182,16 @@ class RoundtableSession:
         prompt = self._build_context(thinker_id)
         full_text = ""
 
-        stream = self.client.chat.completions.create(
-            model="gemma3:2b",
+        with self.client.messages.stream(
+            model="claude-opus-4-7",
             max_tokens=700,
-            messages=[
-                {"role": "system", "content": thinker["system"]},
-                {"role": "user", "content": prompt},
-            ],
-            stream=True,
-        )
-        for chunk in stream:
-            text = chunk.choices[0].delta.content or ""
-            text_display = text.replace("\n", "\n  ")
-            print(text_display, end="", flush=True)
-            full_text += text
+            system=thinker["system"],
+            messages=[{"role": "user", "content": prompt}],
+        ) as stream:
+            for text in stream.text_stream:
+                text_display = text.replace("\n", "\n  ")
+                print(text_display, end="", flush=True)
+                full_text += text
 
         print("\n")
         return full_text
@@ -239,15 +233,13 @@ class RoundtableSession:
 只返回JSON，不要任何前缀或后缀。"""
 
             try:
-                resp = self.client.chat.completions.create(
-                    model="gemma3:2b",
+                resp = self.client.messages.create(
+                    model="claude-opus-4-7",
                     max_tokens=600,
-                    messages=[
-                        {"role": "system", "content": scorer.config["system"]},
-                        {"role": "user", "content": score_prompt},
-                    ],
+                    system=scorer.config["system"],
+                    messages=[{"role": "user", "content": score_prompt}],
                 )
-                raw = resp.choices[0].message.content.strip()
+                raw = resp.content[0].text.strip()
                 # 提取JSON
                 start = raw.find("{")
                 end = raw.rfind("}") + 1
@@ -357,16 +349,14 @@ class RoundtableSession:
 不要评价谁对谁错，而是提炼集体智慧的结晶。"""
 
         print("  ", end="", flush=True)
-        stream = self.client.chat.completions.create(
-            model="gemma3:2b",
+        with self.client.messages.stream(
+            model="claude-opus-4-7",
             max_tokens=600,
             messages=[{"role": "user", "content": synthesis_prompt}],
-            stream=True,
-        )
-        for chunk in stream:
-            text = chunk.choices[0].delta.content or ""
-            text_display = text.replace("\n", "\n  ")
-            print(text_display, end="", flush=True)
+        ) as stream:
+            for text in stream.text_stream:
+                text_display = text.replace("\n", "\n  ")
+                print(text_display, end="", flush=True)
 
         print("\n")
         hr("═")
@@ -408,12 +398,8 @@ def main():
     print("  五位思想家，围绕你的话题，深度碰撞，互相打分")
     print("═" * 64 + "\n")
 
-    # 检查 Ollama 是否在运行
-    import urllib.request
-    try:
-        urllib.request.urlopen("http://localhost:11434", timeout=2)
-    except Exception:
-        print("  ❌ Ollama 未运行，请先启动：ollama serve")
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        print("  ❌ 请先设置 ANTHROPIC_API_KEY")
         sys.exit(1)
 
     topic = input("  请输入对谈话题（回车使用示例）：").strip()
