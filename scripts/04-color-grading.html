@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI 调色工具 — kids-math-20 Pipeline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', monospace;
+      background: #0d1117;
+      color: #e0e0e0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Left panel: controls ── */
+    #controls {
+      width: 380px;
+      min-width: 380px;
+      background: #161b22;
+      border-right: 1px solid #30363d;
+      overflow-y: auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #64b4ff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section {
+      margin-bottom: 24px;
+    }
+    .section-header {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6e7681;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #21262d;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .slider-label {
+      width: 96px;
+      font-size: 12px;
+      color: #8b949e;
+      flex-shrink: 0;
+    }
+    .slider-wrap {
+      flex: 1;
+      position: relative;
+    }
+    input[type=range] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #21262d;
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #64b4ff;
+      cursor: pointer;
+      border: 2px solid #0d1117;
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #64b4ff;
+      cursor: pointer;
+      border: 2px solid #0d1117;
+    }
+    .slider-value {
+      width: 44px;
+      text-align: right;
+      font-size: 12px;
+      font-family: monospace;
+      color: #e6edf3;
+    }
+
+    /* Histogram mock */
+    #histogram {
+      width: 100%;
+      height: 60px;
+      background: #0d1117;
+      border-radius: 6px;
+      border: 1px solid #21262d;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    #histCanvas { width: 100%; height: 100%; }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: all 0.15s;
+    }
+    button.primary {
+      background: #1f6feb;
+      border-color: #388bfd;
+      color: #fff;
+    }
+    button.primary:hover { background: #388bfd; }
+    button.secondary {
+      background: #21262d;
+      color: #c9d1d9;
+    }
+    button.secondary:hover { background: #30363d; }
+    button.danger {
+      background: #21262d;
+      border-color: #f85149;
+      color: #f85149;
+    }
+    button.danger:hover { background: #3d1c1c; }
+
+    /* Preset chips */
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .preset-btn {
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid #30363d;
+      background: #21262d;
+      color: #8b949e;
+      font-size: 11px;
+      cursor: pointer;
+      flex: none;
+      transition: all 0.15s;
+    }
+    .preset-btn:hover, .preset-btn.active {
+      background: rgba(100,180,255,0.15);
+      border-color: #64b4ff;
+      color: #64b4ff;
+    }
+
+    /* ── Right panel: preview ── */
+    #preview-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #010409;
+      position: relative;
+    }
+
+    #preview-toolbar {
+      height: 44px;
+      background: #0d1117;
+      border-bottom: 1px solid #21262d;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .toolbar-label {
+      font-size: 11px;
+      color: #6e7681;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .toolbar-badge {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-family: monospace;
+      color: #8b949e;
+    }
+    #splitToggle {
+      margin-left: auto;
+      padding: 4px 12px;
+      border-radius: 4px;
+      border: 1px solid #30363d;
+      background: #21262d;
+      color: #8b949e;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    #splitToggle.active {
+      border-color: #64b4ff;
+      color: #64b4ff;
+      background: rgba(100,180,255,0.1);
+    }
+
+    #preview-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #preview-wrap {
+      position: relative;
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+      cursor: ew-resize;
+      user-select: none;
+    }
+    #baseImg, #gradedCanvas {
+      display: block;
+      max-width: 100%;
+      max-height: calc(100vh - 44px - 48px);
+    }
+    #gradedCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #splitLine {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: #64b4ff;
+      pointer-events: none;
+      display: none;
+    }
+    #splitHandle {
+      position: absolute;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #64b4ff;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Drop zone */
+    #dropZone {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #6e7681;
+      pointer-events: none;
+    }
+    #dropZone.has-image { display: none; }
+    .drop-icon { font-size: 48px; }
+    .drop-text { font-size: 14px; }
+    .drop-sub { font-size: 12px; color: #4d5359; }
+
+    /* Export modal */
+    #exportModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #exportModal.open { display: flex; }
+    #exportBox {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 32px;
+      width: 560px;
+      max-width: 90vw;
+    }
+    #exportBox h2 { font-size: 18px; margin-bottom: 16px; color: #e6edf3; }
+    #exportJson {
+      width: 100%;
+      height: 260px;
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      color: #7ee787;
+      font-size: 12px;
+      font-family: monospace;
+      padding: 12px;
+      resize: none;
+    }
+    .export-note {
+      font-size: 12px;
+      color: #6e7681;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Left: Controls ── -->
+<div id="controls">
+  <div class="panel-title">
+    🎨 调色工具
+    <span style="font-size:10px;color:#6e7681;font-weight:400;text-transform:none;letter-spacing:0">AI Video Pipeline · Step 4</span>
+  </div>
+
+  <!-- Histogram -->
+  <canvas id="histCanvas" style="width:100%;height:56px;background:#0d1117;border-radius:6px;border:1px solid #21262d;margin-bottom:16px;"></canvas>
+
+  <!-- Presets -->
+  <div class="section">
+    <div class="section-header">快速预设</div>
+    <div class="presets" id="presets">
+      <div class="preset-btn active" data-preset="neutral">原味</div>
+      <div class="preset-btn" data-preset="warm">暖调历史</div>
+      <div class="preset-btn" data-preset="cool">冷调科技</div>
+      <div class="preset-btn" data-preset="cinematic">电影感</div>
+      <div class="preset-btn" data-preset="vivid">鲜艳</div>
+    </div>
+  </div>
+
+  <!-- White Balance -->
+  <div class="section">
+    <div class="section-header">白平衡</div>
+    <div id="wb-sliders"></div>
+  </div>
+
+  <!-- Tone -->
+  <div class="section">
+    <div class="section-header">色调曲线</div>
+    <div id="tone-sliders"></div>
+  </div>
+
+  <!-- Color -->
+  <div class="section">
+    <div class="section-header">色彩</div>
+    <div id="color-sliders"></div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button class="secondary" id="btnReset">重置</button>
+    <button class="primary" id="btnExport">导出参数</button>
+  </div>
+  <div style="margin-top:8px;">
+    <button class="secondary" style="width:100%;font-size:11px;" id="btnCopyFFmpeg">复制 FFmpeg 命令</button>
+  </div>
+
+  <div style="margin-top:16px;padding:12px;background:#0d1117;border-radius:6px;border:1px solid #21262d;">
+    <div style="font-size:11px;color:#6e7681;line-height:1.7;">
+      <div style="color:#8b949e;font-weight:600;margin-bottom:4px;">📌 使用说明</div>
+      1. 拖拽视频截帧到右侧预览区<br>
+      2. 用滑块调整色调直到满意<br>
+      3. 点击「Split」开启对比视图<br>
+      4. 点击「导出参数」→ 保存 JSON<br>
+      5. <code style="color:#7ee787">npm run pipeline:grade</code> 生成 .cube LUT
+    </div>
+  </div>
+</div>
+
+<!-- ── Right: Preview ── -->
+<div id="preview-panel">
+  <div id="preview-toolbar">
+    <span class="toolbar-label">预览</span>
+    <span class="toolbar-badge" id="resLabel">无图像</span>
+    <span class="toolbar-badge" id="filterLabel">Filter: —</span>
+    <button id="splitToggle" onclick="toggleSplit()">Split View</button>
+    <label style="margin-left:8px;">
+      <input type="file" accept="image/*,video/*" id="fileInput" style="display:none" onchange="loadFile(event)">
+      <span class="toolbar-label" style="cursor:pointer;color:#64b4ff;border:1px solid #64b4ff;border-radius:4px;padding:3px 10px;">上传图片</span>
+    </label>
+  </div>
+
+  <div id="preview-container">
+    <div id="dropZone">
+      <div class="drop-icon">🎬</div>
+      <div class="drop-text">拖拽视频截帧到此处</div>
+      <div class="drop-sub">支持 JPG · PNG · WebP</div>
+    </div>
+
+    <div id="preview-wrap" style="display:none">
+      <img id="baseImg" crossorigin="anonymous" />
+      <canvas id="gradedCanvas"></canvas>
+      <div id="splitLine"></div>
+      <div id="splitHandle">↔</div>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div id="exportModal">
+  <div id="exportBox">
+    <h2>导出调色参数</h2>
+    <textarea id="exportJson" readonly></textarea>
+    <div class="export-note">
+      保存为 <code>output/luts/grade-params.json</code><br>
+      然后运行 <code style="color:#7ee787">npm run pipeline:grade</code> 生成 .cube LUT 文件。
+    </div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="secondary" onclick="document.getElementById('exportModal').classList.remove('open')">关闭</button>
+      <button class="primary" id="btnDownload">下载 JSON</button>
+      <button class="secondary" id="btnCopyJson">复制</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// 参数定义
+// ──────────────────────────────────────────────────────────────────────────────
+const PARAMS = {
+  wb: [
+    { id: 'temperature', label: '色温', min: -100, max: 100, default: 0 },
+    { id: 'tint',        label: '色调', min: -100, max: 100, default: 0 },
+  ],
+  tone: [
+    { id: 'exposure',   label: '曝光',   min: -3,   max: 3,   default: 0, step: 0.1 },
+    { id: 'contrast',   label: '对比度', min: -100, max: 100, default: 0 },
+    { id: 'highlights', label: '高光',   min: -100, max: 0,   default: 0 },
+    { id: 'shadows',    label: '阴影',   min: 0,    max: 100, default: 0 },
+    { id: 'whites',     label: '白色',   min: -100, max: 100, default: 0 },
+    { id: 'blacks',     label: '黑色',   min: -100, max: 100, default: 0 },
+  ],
+  color: [
+    { id: 'saturation', label: '饱和度', min: -100, max: 100, default: 0 },
+    { id: 'vibrance',   label: 'Vibrance', min: -100, max: 100, default: 0 },
+  ],
+};
+
+const PRESETS = {
+  neutral:    { temperature: 0,  tint: 0,  exposure: 0,   contrast: 0,  highlights: 0,   shadows: 0,  whites: 0,  blacks: 0,  saturation: 0,  vibrance: 0  },
+  warm:       { temperature: 18, tint: -5, exposure: 0.1, contrast: 22, highlights: -15, shadows: 12, whites: 5,  blacks: -8, saturation: 8,  vibrance: 15 },
+  cool:       { temperature: -22,tint: 5,  exposure: 0.2, contrast: 18, highlights: -10, shadows: 8,  whites: 0,  blacks: -5, saturation: -5, vibrance: 10 },
+  cinematic:  { temperature: 10, tint: -8, exposure: -0.2,contrast: 35, highlights: -25, shadows: 15, whites: -5, blacks: -20,saturation: 5,  vibrance: 8  },
+  vivid:      { temperature: 8,  tint: -3, exposure: 0.3, contrast: 12, highlights: -5,  shadows: 5,  whites: 8,  blacks: -5, saturation: 35, vibrance: 25 },
+};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// State
+// ──────────────────────────────────────────────────────────────────────────────
+let values = { ...PRESETS.neutral };
+let splitActive = false;
+let splitX = 0.5;
+let isDragging = false;
+let imageLoaded = false;
+let imageData = null;
+let originalPixels = null;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Build sliders
+// ──────────────────────────────────────────────────────────────────────────────
+function buildSliders(container, params) {
+  params.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'slider-row';
+    const step = p.step || 1;
+    row.innerHTML = `
+      <span class="slider-label">${p.label}</span>
+      <div class="slider-wrap">
+        <input type="range" id="sl_${p.id}" min="${p.min}" max="${p.max}" step="${step}" value="${p.default}">
+      </div>
+      <span class="slider-value" id="sv_${p.id}">${formatVal(p.default, step)}</span>
+    `;
+    container.appendChild(row);
+    document.getElementById('sl_' + p.id).addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      values[p.id] = v;
+      document.getElementById('sv_' + p.id).textContent = formatVal(v, step);
+      applyGrade();
+      updateFilterLabel();
+    });
+  });
+}
+
+function formatVal(v, step) {
+  if (step < 1) return (v > 0 ? '+' : '') + v.toFixed(1);
+  return (v > 0 ? '+' : '') + v;
+}
+
+buildSliders(document.getElementById('wb-sliders'), PARAMS.wb);
+buildSliders(document.getElementById('tone-sliders'), PARAMS.tone);
+buildSliders(document.getElementById('color-sliders'), PARAMS.color);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Color math (mirrors 05-generate-lut.js)
+// ──────────────────────────────────────────────────────────────────────────────
+function clamp(v) { return Math.max(0, Math.min(255, v)); }
+
+function applyGradeToPixel(r, g, b) {
+  let R = r/255, G = g/255, B = b/255;
+
+  // Temperature
+  const t = values.temperature / 100;
+  R += t * 0.1; B -= t * 0.1;
+
+  // Tint
+  const ti = values.tint / 100;
+  G -= ti * 0.07;
+
+  // Exposure
+  const factor = Math.pow(2, values.exposure);
+  R *= factor; G *= factor; B *= factor;
+
+  // Contrast S-curve
+  const cs = values.contrast / 100;
+  if (cs !== 0) {
+    [R, G, B] = [R, G, B].map(v => {
+      const mid = 0.5;
+      if (v < mid) { const t2 = v/mid; return v + (mid*(t2*t2*(3-2*t2)) - v)*cs; }
+      else { const t2 = (v-mid)/(1-mid); return v + (mid+(1-mid)*(t2*t2*(3-2*t2)) - v)*cs; }
+    });
+  }
+
+  // Highlights
+  if (values.highlights < 0) {
+    const lum = 0.2126*R + 0.7152*G + 0.0722*B;
+    const mask = Math.max(0, (lum - 0.6)/0.4);
+    const s = (-values.highlights/100)*mask;
+    R -= R*s*0.3; G -= G*s*0.3; B -= B*s*0.3;
+  }
+
+  // Shadows
+  if (values.shadows > 0) {
+    const lum = 0.2126*R + 0.7152*G + 0.0722*B;
+    const mask = Math.max(0, (0.4 - lum)/0.4);
+    const lift = (values.shadows/100)*mask*0.2;
+    R += lift; G += lift; B += lift;
+  }
+
+  // Whites / Blacks
+  const wf = values.whites / 100 * 0.15;
+  const bf = values.blacks / 100 * 0.15;
+  R += wf; G += wf; B += wf;
+  R = R * (1 - bf) + bf * (bf > 0 ? 0.02 : 0);
+  G = G * (1 - bf) + bf * (bf > 0 ? 0.02 : 0);
+  B = B * (1 - bf) + bf * (bf > 0 ? 0.02 : 0);
+
+  // Saturation + Vibrance
+  const lum2 = 0.2126*R + 0.7152*G + 0.0722*B;
+  const sf = 1 + values.saturation/100;
+  R = lum2 + (R - lum2) * sf;
+  G = lum2 + (G - lum2) * sf;
+  B = lum2 + (B - lum2) * sf;
+
+  // Vibrance (smart saturation)
+  if (values.vibrance !== 0) {
+    const mx = Math.max(R, G, B), mn = Math.min(R, G, B);
+    const sat = mx > 0 ? (mx - mn)/mx : 0;
+    const vf = (1 - sat) * (values.vibrance/100) * 0.5;
+    const lv = 0.2126*R + 0.7152*G + 0.0722*B;
+    R = lv + (R - lv) * (1 + vf);
+    G = lv + (G - lv) * (1 + vf);
+    B = lv + (B - lv) * (1 + vf);
+  }
+
+  return [clamp(R*255), clamp(G*255), clamp(B*255)];
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Canvas rendering
+// ──────────────────────────────────────────────────────────────────────────────
+function applyGrade() {
+  if (!imageLoaded || !originalPixels) return;
+
+  const canvas = document.getElementById('gradedCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  const gradedData = ctx.createImageData(w, h);
+  const src = originalPixels.data;
+  const dst = gradedData.data;
+
+  for (let i = 0; i < src.length; i += 4) {
+    const [r, g, b] = applyGradeToPixel(src[i], src[i+1], src[i+2]);
+    dst[i]   = r;
+    dst[i+1] = g;
+    dst[i+2] = b;
+    dst[i+3] = src[i+3];
+  }
+
+  ctx.putImageData(gradedData, 0, 0);
+  applySplit();
+  drawHistogram(gradedData);
+}
+
+function applySplit() {
+  const canvas = document.getElementById('gradedCanvas');
+  const line = document.getElementById('splitLine');
+  const handle = document.getElementById('splitHandle');
+  const wrap = document.getElementById('preview-wrap');
+  const w = wrap.clientWidth;
+
+  if (!splitActive) {
+    canvas.style.clipPath = 'none';
+    line.style.display = 'none';
+    handle.style.display = 'none';
+    return;
+  }
+
+  const px = splitX * w;
+  canvas.style.clipPath = `inset(0 ${w - px}px 0 0)`;
+  line.style.left = px + 'px';
+  line.style.display = 'block';
+  handle.style.left = px + 'px';
+  handle.style.display = 'flex';
+}
+
+function drawHistogram(imgData) {
+  const canvas = document.getElementById('histCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth * 2;
+  const h = canvas.height = canvas.clientHeight * 2;
+  ctx.clearRect(0, 0, w, h);
+
+  const buckets = { r: new Uint32Array(256), g: new Uint32Array(256), b: new Uint32Array(256) };
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    buckets.r[imgData.data[i]]++;
+    buckets.g[imgData.data[i+1]]++;
+    buckets.b[imgData.data[i+2]]++;
+  }
+
+  const maxVal = Math.max(...buckets.r, ...buckets.g, ...buckets.b);
+
+  [['r','rgba(239,68,68,0.5)'],['g','rgba(52,211,153,0.5)'],['b','rgba(100,180,255,0.5)']].forEach(([ch, color]) => {
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    for (let i = 0; i < 256; i++) {
+      const bh = (buckets[ch][i] / maxVal) * h;
+      ctx.fillRect((i/255)*w, h - bh, w/256 + 1, bh);
+    }
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Image loading
+// ──────────────────────────────────────────────────────────────────────────────
+function loadImageSrc(src) {
+  const img = document.getElementById('baseImg');
+  img.onload = () => {
+    const wrap = document.getElementById('preview-wrap');
+    const canvas = document.getElementById('gradedCanvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.style.width = img.clientWidth + 'px';
+    canvas.style.height = img.clientHeight + 'px';
+
+    // Capture original pixels
+    const offscreen = document.createElement('canvas');
+    offscreen.width = img.naturalWidth;
+    offscreen.height = img.naturalHeight;
+    const ctx = offscreen.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    originalPixels = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
+
+    imageLoaded = true;
+    wrap.style.display = 'block';
+    document.getElementById('dropZone').classList.add('has-image');
+    document.getElementById('resLabel').textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+
+    applyGrade();
+  };
+  img.src = src;
+}
+
+function loadFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => loadImageSrc(ev.target.result);
+  reader.readAsDataURL(file);
+}
+
+// Drag & drop
+const previewPanel = document.getElementById('preview-panel');
+previewPanel.addEventListener('dragover', e => { e.preventDefault(); });
+previewPanel.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => loadImageSrc(ev.target.result);
+  reader.readAsDataURL(file);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Split view drag
+// ──────────────────────────────────────────────────────────────────────────────
+function toggleSplit() {
+  splitActive = !splitActive;
+  document.getElementById('splitToggle').classList.toggle('active', splitActive);
+  if (!splitActive) splitX = 0.5;
+  applySplit();
+}
+
+const previewWrap = document.getElementById('preview-wrap');
+previewWrap.addEventListener('mousedown', (e) => {
+  if (!splitActive) return;
+  isDragging = true;
+});
+window.addEventListener('mousemove', (e) => {
+  if (!isDragging || !splitActive) return;
+  const rect = previewWrap.getBoundingClientRect();
+  splitX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  applySplit();
+});
+window.addEventListener('mouseup', () => { isDragging = false; });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Presets
+// ──────────────────────────────────────────────────────────────────────────────
+document.getElementById('presets').querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const preset = PRESETS[btn.dataset.preset];
+    if (!preset) return;
+    Object.assign(values, preset);
+    [...PARAMS.wb, ...PARAMS.tone, ...PARAMS.color].forEach(p => {
+      const sl = document.getElementById('sl_' + p.id);
+      const sv = document.getElementById('sv_' + p.id);
+      if (sl) { sl.value = values[p.id]; sv.textContent = formatVal(values[p.id], p.step || 1); }
+    });
+    applyGrade();
+    updateFilterLabel();
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Reset
+// ──────────────────────────────────────────────────────────────────────────────
+document.getElementById('btnReset').addEventListener('click', () => {
+  document.querySelector('.preset-btn[data-preset="neutral"]').click();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Filter label (CSS approximation for display only)
+// ──────────────────────────────────────────────────────────────────────────────
+function updateFilterLabel() {
+  const parts = [];
+  if (values.temperature !== 0) parts.push(`temp:${values.temperature > 0 ? '+' : ''}${values.temperature}`);
+  if (values.contrast !== 0)    parts.push(`contrast:${values.contrast > 0 ? '+' : ''}${values.contrast}`);
+  if (values.saturation !== 0)  parts.push(`sat:${values.saturation > 0 ? '+' : ''}${values.saturation}`);
+  document.getElementById('filterLabel').textContent =
+    parts.length > 0 ? parts.join(' · ') : 'Filter: neutral';
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Export
+// ──────────────────────────────────────────────────────────────────────────────
+document.getElementById('btnExport').addEventListener('click', () => {
+  const exportData = {
+    name: document.querySelector('.preset-btn.active')?.textContent || 'Custom',
+    generatedAt: new Date().toISOString(),
+    ...values,
+  };
+  const json = JSON.stringify(exportData, null, 2);
+  document.getElementById('exportJson').value = json;
+  document.getElementById('exportModal').classList.add('open');
+});
+
+document.getElementById('btnDownload').addEventListener('click', () => {
+  const json = document.getElementById('exportJson').value;
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'grade-params.json';
+  a.click();
+});
+
+document.getElementById('btnCopyJson').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('exportJson').value);
+  document.getElementById('btnCopyJson').textContent = '已复制!';
+  setTimeout(() => { document.getElementById('btnCopyJson').textContent = '复制'; }, 1500);
+});
+
+document.getElementById('btnCopyFFmpeg').addEventListener('click', () => {
+  const cmd = `ffmpeg -i input.mp4 -vf "lut3d='output/luts/grade.cube'" output-graded.mp4`;
+  navigator.clipboard.writeText(cmd);
+  document.getElementById('btnCopyFFmpeg').textContent = '已复制!';
+  setTimeout(() => { document.getElementById('btnCopyFFmpeg').textContent = '复制 FFmpeg 命令'; }, 1500);
+});
+
+// Close modal on backdrop click
+document.getElementById('exportModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('exportModal'))
+    document.getElementById('exportModal').classList.remove('open');
+});
+</script>
+
+</body>
+</html>

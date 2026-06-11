@@ -1,0 +1,23 @@
+node_modules/
+dist/
+
+# Pipeline outputs (large files)
+output/renders/*.mp4
+output/renders/*.mov
+output/transcripts/*.json
+output/figma-tokens.json
+footage/
+
+# Keep directory structure
+!output/renders/.gitkeep
+!output/transcripts/.gitkeep
+!output/decisions/.gitkeep
+!output/luts/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local

@@ -1,0 +1,30 @@
+{
+  "name": "kids-math-20",
+  "version": "1.0.0",
+  "description": "AI Video Production Pipeline — Human Evolution Timeline",
+  "scripts": {
+    "remotion:studio": "remotion studio",
+    "remotion:render": "remotion render TimelineVideo --output output/renders/timeline-4k.mp4",
+    "remotion:render:preview": "remotion render TimelineVideo --output output/renders/preview.mp4 --scale 0.5",
+    "pipeline": "bash scripts/pipeline.sh",
+    "pipeline:transcribe": "bash scripts/01-transcribe.sh",
+    "pipeline:select": "node scripts/02-select-takes.js",
+    "pipeline:cut": "node scripts/03-rough-cut.js",
+    "pipeline:grade": "node scripts/05-generate-lut.js",
+    "pipeline:figma": "node scripts/06-figma-sync.js",
+    "color-grading": "open scripts/04-color-grading.html || xdg-open scripts/04-color-grading.html"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.0",
+    "@remotion/cli": "^4.0.0",
+    "@remotion/player": "^4.0.0",
+    "remotion": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.4.0"
+  }
+}
